@@ -1,0 +1,11 @@
+# CPU-only torch: install it first from the PyTorch CPU index (see README.md):
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.2
+transformers>=4.45
+rawpy>=0.21
+exifread>=3.0
+Pillow>=10.0
+numpy>=1.26
+PyYAML>=6.0
+tqdm>=4.66
+pytest>=8.0
