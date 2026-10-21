@@ -21,8 +21,6 @@ DEFAULTS = {
         "batch_size": 32,
         "device": "cpu",
         "input_size": 224,
-        "exposure_target": 0.0,     # mean brightness (0..1) thumbs are scaled to before embedding; 0 = off
-        "exposure_max_gain": 4.0,   # clamp for the scale factor (both directions)
     },
     "people": {
         # Person detection gates the relaxed "no people" grouping rules below.

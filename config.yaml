@@ -13,11 +13,6 @@ embedding:
   batch_size: 32
   device: cpu
   input_size: 224             # px, square input fed to the model
-  # Exposure normalisation: each thumbnail is scaled so its mean brightness is
-  # exposure_target (0..1, ~120/255) before it goes into DINOv2. Same scene shot
-  # dark vs bright scored 0.61 on talici 2 (8895/8896) without it. 0 turns it off.
-  exposure_target: 0        # tried 0.47 on talici 2 (2026-10-21): no effect (8895/8896 0.61 -> 0.62), kept off
-  exposure_max_gain: 4.0
 
 people:
   # Person detection (local, CPU). Photos WITHOUT people (decor, food, details)
