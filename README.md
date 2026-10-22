@@ -165,7 +165,9 @@ This re-groups from the cached embeddings and rewrites `report.html` in seconds.
 | `identities.json` | group / faces | `{threshold, identities: {label: {n_faces, n_photos}}, photos: {sha256: {ids, faces, n_faces}}}` |
 | `faces_sheets/<label>.jpg` | faces --sheets | contact sheet of all faces of one identity (review only) |
 | `groups.json` | group | `{created, config_used, n_groups, n_photos, groups: [group…]}` |
-| `report.html` | group / report | visual check of the groups |
+| `report.html` | group / report | visual check of the groups; also the labelling tool (*Label mode*) |
+| `labels.json` | label | ground truth: `[{a_sha, b_sha, a_name, b_name, label: same|different|unsure, labeled_at}, …]`, one entry per labelled boundary between two time-adjacent photos of one camera |
+| `errors.jpg`, `errors.<suffix>.jpg` | score | contact sheet of the boundaries where the grouping disagrees with the labels (`errors.nofaces.jpg` for `groups.nofaces.json`) |
 | `cull.log` | all | file names, counts, timings and errors; never image content |
 
 **Photo record** (`photos.json`):
@@ -243,6 +245,8 @@ Then open `D:\cull\2024-06-15\report.html` in a browser.
 | `group --output Y` | Embeddings, people, faces (all cached) → grouping → report. Use it after changing thresholds. |
 | `faces --output Y [--sheets]` | Face detection + identity clustering only; `--sheets` writes `faces_sheets/` for review. |
 | `report --output Y` | Rebuild `report.html` from the existing JSON files. |
+| `label --output Y [--port 8765] [--no-browser]` | Rebuild the report, serve it on `127.0.0.1` and save ground-truth labels to `labels.json` (see *Labelling ground truth*). |
+| `score --output Y [--groups F [F]]` | Compare `labels.json` with `groups.json` (or the given file(s), one or two) and write `errors.jpg`. |
 
 Every command accepts `--config path\to\config.yaml` (default: `config.yaml` next to `cull.py`).
 
@@ -261,6 +265,67 @@ Run the tests:
   - Click a thumbnail for the preview; use ←/→ to move and Esc to close.
   - Filters: hide single photos, only flagged groups (split or low similarity), and one camera.
 - **End:** the *Problems* section lists failed and undated files.
+
+### Labelling ground truth
+
+Until now every grouping change was judged by looking at contact sheets. Labels turn that into
+a number: label the test weddings once, then every re-grouping gets precision / recall / F1.
+
+**What a label is.** The boundary between two *time-adjacent photos of the same camera*:
+`same` (the two frames belong in one group), `different`, or `unsure`. Labels are stored per
+pair of sha256 (not per group id), so they survive re-grouping, re-ingesting and renamed output
+folders. A "same" run of three photos is two labels. Known limitation: look-back joins (a photo
+returning to an earlier, non-adjacent group) are not labelled and not scored.
+
+**Start labelling:**
+
+```bash
+.venv\Scripts\python cull.py label --output data\out-4a
+```
+
+This rebuilds `report.html`, serves the folder on `http://127.0.0.1:8765/` and opens the browser
+in *Label mode* (the button at the top of the report switches between the group view and the
+label strip). Every change is POSTed to the server and written to `labels.json` at once;
+Ctrl-C stops the server. The strip shows the photos in capture order with one widget between
+each pair:
+
+- the connector shows the pipeline's current decision (green = same group, red dashed = different),
+  with the DINOv2 similarity and the time gap underneath;
+- a **dotted** button is only the pipeline's suggestion: it is *not* saved until you confirm it
+  with Enter or choose something else;
+- a **filled** button is your label (green S, red D, amber U); a red left edge marks a label that
+  disagrees with the pipeline;
+- the progress counter shows labelled / total and the counts per label.
+
+| Key | Action |
+|---|---|
+| `←` `→` (or `↑` `↓`) | previous / next boundary |
+| `S` / `D` / `U` | same / different / unsure, then move to the next boundary |
+| `Enter` | accept the pipeline's suggestion |
+| `N` | jump to the next unlabelled boundary |
+| `Backspace` / `Delete` | remove the label (back to the suggestion) |
+| `Esc` | leave label mode |
+| click a thumbnail | open the preview (←/→ to move, Esc to close) |
+
+If `report.html` is opened directly as a file (no server), the labels are kept in the browser's
+localStorage for that wedding; use **Export labels.json** to save them into the output folder
+and **Import** to load a file. *Clear labels* needs two clicks.
+
+**Score a grouping:**
+
+```bash
+.venv\Scripts\python cull.py score --output data\out-4a
+.venv\Scripts\python cull.py score --output data\out-4a --groups groups.json groups.nofaces.json
+```
+
+For every labelled boundary (unsure ones are skipped) the pipeline says "same" when both
+photos are in one group. The command prints the number of labels, correct boundaries, **false
+merges** (pipeline joined, label different: the error that could lose a photo), **missed merges**
+(pipeline split, label same: costs review time), precision / recall / F1 for "same", and every
+error with file names, similarity and gap. The errors go to `errors.jpg` as a contact sheet
+(`errors.nofaces.jpg` for `groups.nofaces.json`). With two files it also prints the metrics side
+by side and which boundaries one file gets right and the other wrong. Any `groups*.json` saved
+from an earlier run can be scored, so a change can be measured before and after.
 
 ---
 
@@ -293,6 +358,8 @@ culling/embed.py      DINOv2 embeddings + cache
 culling/people.py     person detection (RT-DETR) + cache
 culling/faces.py      face detection (SCRFD), alignment, ArcFace embeddings, identity clustering
 culling/grouping.py   grouping algorithm + groups.json
-culling/report.py     report.html
+culling/report.py     report.html (group view + label mode)
+culling/labels.py     labels.json I/O, boundaries between adjacent photos, scoring, errors.jpg
+culling/labelserver.py local http server for `cull.py label` (GET/POST /labels)
 tests/                pytest, synthetic data only
 ```

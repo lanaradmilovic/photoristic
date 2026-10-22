@@ -5,6 +5,8 @@
     python cull.py group   --output <output folder>     # re-group after changing thresholds
     python cull.py faces   --output <output folder> [--sheets]   # face identities only
     python cull.py report  --output <output folder>
+    python cull.py label   --output <output folder> [--port 8765] [--no-browser]   # label boundaries in the browser
+    python cull.py score   --output <output folder> [--groups groups.json groups.nofaces.json]
 
 All commands accept --config (default: config.yaml next to this file).
 """
@@ -89,9 +91,11 @@ def cmd_group(args, config, photos=None):
 
 
 def cmd_report(args, config, photos=None, identities=None):
+    from culling.embed import load_cache
     from culling.faces import load_identities
     from culling.grouping import load_groups
     from culling.ingest import read_photos_file
+    from culling.labels import boundaries, load_labels
     from culling.report import write_report
 
     photos_file = read_photos_file(args.output) or {}
@@ -101,13 +105,57 @@ def cmd_report(args, config, photos=None, identities=None):
     input_dir = getattr(args, "input", None) or photos_file.get("input_dir")
     if identities is None and config["faces"]["enabled"]:
         identities = load_identities(args.output)
-    path = write_report(args.output, photos, groups_data, input_dir, identities)
+    embeddings = load_cache(args.output, config["embedding"]["model_name"])
+    label_data = {"boundaries": boundaries(photos, groups_data, embeddings),
+                  "labels": load_labels(args.output)}
+    path = write_report(args.output, photos, groups_data, input_dir, identities, label_data)
     log.info("Report: %s", path.resolve())
 
 
 def cmd_prepare(args, config):
     photos = cmd_ingest(args, config)
     cmd_group(args, config, photos)
+
+
+def cmd_label(args, config):
+    """Rebuild the report (so the boundaries are current), then serve it for labelling."""
+    from culling.labelserver import serve
+
+    _load_photos_or_exit(args)
+    cmd_report(args, config)
+    serve(args.output, port=args.port, open_browser=not args.no_browser)
+
+
+def cmd_score(args, config):
+    import json
+
+    from culling.embed import load_cache
+    from culling.labels import (attach_boundary_info, boundaries, errors_sheet_name,
+                                format_comparison, format_report, load_labels, score,
+                                write_errors_sheet)
+
+    if len(args.groups) > 2:
+        sys.exit("--groups takes one or two files")
+    photos = _load_photos_or_exit(args)
+    labels = load_labels(args.output)
+    if not labels:
+        sys.exit(f"No labels in {args.output / 'labels.json'} - run 'label' first.")
+    embeddings = load_cache(args.output, config["embedding"]["model_name"])
+    results = []
+    for name in args.groups:
+        path = Path(name) if Path(name).is_absolute() else args.output / name
+        with open(path, encoding="utf-8") as f:
+            groups_data = json.load(f)
+        result = score(labels, photos, groups_data)
+        attach_boundary_info(result["errors"], boundaries(photos, groups_data, embeddings))
+        sheet = write_errors_sheet(args.output, result["errors"], errors_sheet_name(path))
+        print(format_report(path.name, result))
+        print(f"errors sheet: {sheet}" if sheet else "errors sheet: none (no errors)")
+        print()
+        results.append((path.name, result))
+    if len(results) == 2:
+        print(format_comparison(*results[0], *results[1]))
+    return results
 
 
 def main():
@@ -129,6 +177,12 @@ def main():
     faces.add_argument("--sheets", action="store_true",
                        help="also write faces_sheets/<identity>.jpg contact sheets for review")
     add("report", "regenerate report.html from photos.json and groups.json", False)
+    label = add("label", "serve report.html locally and save ground-truth labels to labels.json", False)
+    label.add_argument("--port", type=int, default=8765, help="local port (default 8765)")
+    label.add_argument("--no-browser", action="store_true", help="do not open the browser")
+    score = add("score", "compare labels.json with one or two groups files", False)
+    score.add_argument("--groups", nargs="+", default=["groups.json"], metavar="FILE",
+                       help="groups file(s) inside the output folder, or absolute paths (default groups.json)")
     args = parser.parse_args()
 
     config = load_config(args.config)
@@ -136,7 +190,7 @@ def main():
     log.info("Command: %s (config %s)", args.command, args.config)
     started = time.time()
     commands = {"prepare": cmd_prepare, "ingest": cmd_ingest, "group": cmd_group,
-                "faces": cmd_faces, "report": cmd_report}
+                "faces": cmd_faces, "report": cmd_report, "label": cmd_label, "score": cmd_score}
     commands[args.command](args, config)
     log.info("Finished in %.1f s", time.time() - started)
 
