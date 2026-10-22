@@ -82,6 +82,15 @@ DEFAULTS = {
         "max_retries": 3,
         "image_long_edge": 1024,
     },
+    "judge": {
+        # VLM judge for the grey zone of grouping (culling/judge.py).
+        "sim_low": 0.80,
+        "sim_high": 0.90,
+        "pair_image_long_edge": 768,
+        "include_faces_decided": False,
+        "max_pairs": 0,
+        "seconds_per_call": 4.0,
+    },
 }
 
 

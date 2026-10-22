@@ -125,3 +125,15 @@ vlm:
   timeout_seconds: 120
   max_retries: 3
   image_long_edge: 1024         # previews are downscaled to this before sending (context budget)
+
+# VLM judge for the grey zone of grouping (culling/judge.py, `cull.py judge`).
+# Pairs whose DINOv2 similarity falls in the band below are sent to the VLM as one
+# side-by-side image; it answers whether the two frames are interchangeable. With
+# --dry-run only the pairs and images are written and nothing is sent.
+judge:
+  sim_low: 0.80               # DINOv2 band where neither thresholds nor faces decide reliably
+  sim_high: 0.90              # (half-open: >= low, < high; 0.90 is the people look-back threshold)
+  pair_image_long_edge: 768   # px per frame in the pair image (~384 Qwen tokens per frame)
+  include_faces_decided: false  # also send pairs where identities already said same/different
+  max_pairs: 0                # 0 = all selected pairs
+  seconds_per_call: 4.0       # for the dry-run duration estimate; replace with the measured value

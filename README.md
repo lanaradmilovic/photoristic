@@ -29,6 +29,11 @@ See [PLAN.md](PLAN.md) for phases, status and open questions.
     + per-camera time/similarity grouping
         │  embeddings.npz, people.json, faces.npz, identities.json,
         │  groups.json, report.html (culling/report.py)
+        │
+        │  2c. JUDGE (VLM)   culling/vlm.py, culling/judge.py            [measuring]
+        │      pairs in the DINOv2 grey zone (0.80-0.90) judged by the VLM;
+        │      verdicts compared with labels.json, not used by grouping yet
+        │  judge_pairs.json, judge_pairs.jpg, judge_pairs/, judge_verdicts.json
         ▼
  3. SCORE (VLM)       Qwen3.5-9B on vLLM, one request per group     [planned]
     structured JSON per photo: decision, rank, eyes, blur, distractions,
@@ -152,6 +157,73 @@ This re-groups from the cached embeddings and rewrites `report.html` in seconds.
 
 ---
 
+## VLM judge (step 2c)
+
+DINOv2 similarity between **0.80 and 0.90** is a grey zone: it holds "the same couple in a new
+pose" (should be one group) as well as "another guest at the same spot" (must stay apart). Face
+identities decide part of it; the rest (profiles, backs, small faces) needs a model that sees
+both frames. `cull.py judge` sends such pairs to a vision-language model (VLM) as one
+side-by-side image and records its verdict. The verdicts are **not used by grouping yet**:
+this step measures how well the model decides the grey zone before anything depends on it.
+
+**Which pairs** (`judge.sim_low <= similarity < judge.sim_high`, per camera, in capture order):
+
+- *neighbour*: two time-adjacent photos, whether the pipeline joined them or not;
+- *look-back*: a photo and its best-matching earlier photo of another group whose latest photo is
+  at most `grouping.lookback_seconds` old (the pipeline kept them apart). As in grouping, a group
+  whose best photo shows different identified people is skipped, and the most similar remaining
+  group is the candidate; the gap shown is to that best-matching photo, which may be older than
+  the window. A match at or above the band that the pipeline still did not join is only counted.
+  And: a photo that joined its own group by look-back (`joined_by` in `groups.json`) with a best
+  match in the band, a possible false merge through the relaxed `faces_*` / `nopeople_*` rules;
+  these pairs are kept whatever decided them, because that decision is what is being checked.
+
+Excluded, each counted in the dry-run: pairs whose face identities already say *same* or
+*different* (`--include-faces-decided` sends them too), pairs where both photos show no people
+(the `nopeople_*` rules decide those), and everything past `--max-pairs`.
+
+**The question.** The pair image shows photo 1 (left) and photo 2 (right), each preview scaled
+to `judge.pair_image_long_edge` (768 px). The prompt gives the time gap and asks for
+`same_people` (yes / no / unsure), `interchangeable` (yes / no / unsure: the same moment and the
+same composition, so that one frame would be enough; a wide and a tight framing are not
+interchangeable, nor are two hugs with different guests), `verdict` (`same_group` /
+`different_group` / `unsure`), `confidence` (0–1) and a short `reason`. The answer is forced into
+that JSON schema (vLLM structured outputs), temperature 0, thinking off. The prompt never mentions
+the similarity or the pipeline's decision.
+
+```bash
+.venv\Scripts\python cull.py judge --output data\out-4a --dry-run    # select pairs, write images, send nothing
+.venv\Scripts\python cull.py ping-vlm                                # does the server answer and serve the model?
+.venv\Scripts\python cull.py judge --output data\out-4a              # ask the model; safe to interrupt and rerun
+```
+
+The dry-run prints the pairs per kind (and how many of them the pipeline joined), the
+exclusions, a token estimate (Qwen3.5: one visual token per 32×32 px of the pair image plus
+about 330 text tokens) and a duration estimate from `judge.seconds_per_call`.
+
+A real run needs the vLLM server (see *Infrastructure*): start the instance, open the tunnel
+(`ssh -L 8000:localhost:8000 <host>`; if another program holds port 8000 on the workstation, use
+`-L 8001:localhost:8000` and set `vlm.base_url` to `http://localhost:8001/v1`), set `VLM_API_KEY`
+when the server checks a key, and run `ping-vlm` first. The run writes `judge_verdicts.json` after
+every pair; a dropped connection stops it, and the next run asks only for the pairs still missing
+(verdicts `error`, i.e. no valid answer after `vlm.max_retries`, are asked again). When
+`labels.json` exists, the verdicts of the labelled neighbour pairs are compared with the labels
+(look-back pairs are never labelled): correct / wrong / abstained (`unsure` or `error`) for the
+judge, correct / wrong for the pipeline on the same pairs, precision and recall for `same_group`
+(decided pairs only, and strict with abstentions counted as misses), and every wrong pair with
+the model's reason. The result is also stored under `labels` in `judge_verdicts.json`.
+
+**Files.** `judge_pairs.json`: `{created, sim_low, sim_high, lookback_seconds, stats, pairs: [{a_id,
+b_id, a_name, b_name, camera_id, a_time, b_time, kind, similarity, gap_seconds,
+pipeline_same_group, faces_relation, image, image_size}]}`, rewritten on every run.
+`judge_pairs.jpg`: contact sheet of the pairs in the same order (green frame = pipeline joined,
+red = split; `judge_pairs_02.jpg`, … when very long). `judge_pairs/<a>_<b>.jpg`: exactly what
+is sent. `judge_verdicts.json`: `{created, updated, model, base_url, sim_low, sim_high, verdicts:
+{"<a_id>|<b_id>": {a_id, b_id, a_name, b_name, kind, same_people, interchangeable, verdict,
+confidence, reason, attempts, elapsed_s, prompt_tokens, judged_at}}, labels}`.
+
+---
+
 ## Output folder
 
 | File | Written by | Content |
@@ -168,6 +240,10 @@ This re-groups from the cached embeddings and rewrites `report.html` in seconds.
 | `report.html` | group / report | visual check of the groups; also the labelling tool (*Label mode*) |
 | `labels.json` | label | ground truth: `[{a_sha, b_sha, a_name, b_name, label: same|different|unsure, labeled_at}, …]`, one entry per labelled boundary between two time-adjacent photos of one camera |
 | `errors.jpg`, `errors.<suffix>.jpg` | score | contact sheet of the boundaries where the grouping disagrees with the labels (`errors.nofaces.jpg` for `groups.nofaces.json`) |
+| `judge_pairs.json` | judge | the grey-zone pairs selected for the VLM judge, with the selection statistics |
+| `judge_pairs.jpg` | judge | contact sheet of those pairs (`judge_pairs_02.jpg`, … when very long) |
+| `judge_pairs/<a>_<b>.jpg` | judge | one side-by-side image per pair, exactly what is sent to the VLM |
+| `judge_verdicts.json` | judge | the VLM's verdict per pair (written after every pair; resume state) and the comparison with `labels.json` |
 | `cull.log` | all | file names, counts, timings and errors; never image content |
 
 **Photo record** (`photos.json`):
@@ -247,6 +323,8 @@ Then open `D:\cull\2024-06-15\report.html` in a browser.
 | `report --output Y` | Rebuild `report.html` from the existing JSON files. |
 | `label --output Y [--port 8765] [--no-browser]` | Rebuild the report, serve it on `127.0.0.1` and save ground-truth labels to `labels.json` (see *Labelling ground truth*). |
 | `score --output Y [--groups F [F]]` | Compare `labels.json` with `groups.json` (or the given file(s), one or two) and write `errors.jpg`. |
+| `judge --output Y [--dry-run] [--include-faces-decided] [--max-pairs N]` | Grey-zone pairs for the VLM judge: select them, write `judge_pairs.json`, `judge_pairs.jpg` and `judge_pairs/`; without `--dry-run` ask the VLM, save `judge_verdicts.json` after every pair and compare with `labels.json` (see *VLM judge*). Not part of `prepare`. |
+| `ping-vlm` | Check that the VLM server (`vlm` in the config) answers and serves the configured model. |
 
 Every command accepts `--config path\to\config.yaml` (default: `config.yaml` next to `cull.py`).
 
@@ -334,6 +412,7 @@ from an earlier run can be scored, so a change can be measured before and after.
 The photos contain the faces of wedding guests.
 
 - No image or derived data is sent anywhere except the user's own vLLM server, reached through an SSH tunnel (phase 3).
+- The VLM judge sends its pair images (`judge_pairs/`) only to `vlm.base_url`; `--dry-run` sends nothing. The model's verdicts are stored in the output folder, the log carries only verdict and confidence per pair.
 - Embeddings, person detection and face recognition are computed locally. Hugging Face is contacted only to download the model weights once, with telemetry disabled (`HF_HUB_DISABLE_TELEMETRY=1`).
 - Face embeddings and identity labels stay in the output folder (`faces.npz`, `identities.json`); identities are anonymous letters, never names.
 - The report is a static local file with no external scripts, fonts or CDNs.
@@ -361,5 +440,7 @@ culling/grouping.py   grouping algorithm + groups.json
 culling/report.py     report.html (group view + label mode)
 culling/labels.py     labels.json I/O, boundaries between adjacent photos, scoring, errors.jpg
 culling/labelserver.py local http server for `cull.py label` (GET/POST /labels)
+culling/vlm.py        VLM client: OpenAI-compatible chat completions over urllib, error mapping, ping
+culling/judge.py      VLM judge: grey-zone pair selection, pair images, prompt + schema, judging loop with resume, labels comparison
 tests/                pytest, synthetic data only
 ```

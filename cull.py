@@ -7,6 +7,8 @@
     python cull.py report  --output <output folder>
     python cull.py label   --output <output folder> [--port 8765] [--no-browser]   # label boundaries in the browser
     python cull.py score   --output <output folder> [--groups groups.json groups.nofaces.json]
+    python cull.py judge   --output <output folder> [--dry-run] [--include-faces-decided] [--max-pairs N]
+    python cull.py ping-vlm                             # does the VLM server answer and serve the model?
 
 All commands accept --config (default: config.yaml next to this file).
 """
@@ -24,14 +26,18 @@ log = logging.getLogger("cull")
 
 
 def setup_logging(out_dir):
-    out_dir.mkdir(parents=True, exist_ok=True)
+    """Console + <out_dir>/cull.log; console only when the command has no output folder."""
     fmt = logging.Formatter("%(asctime)s %(levelname)-7s %(name)s: %(message)s", "%H:%M:%S")
     console = logging.StreamHandler(sys.stdout)
     console.setFormatter(fmt)
-    logfile = logging.FileHandler(out_dir / "cull.log", encoding="utf-8")
-    logfile.setFormatter(fmt)
+    handlers = [console]
+    if out_dir is not None:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        logfile = logging.FileHandler(out_dir / "cull.log", encoding="utf-8")
+        logfile.setFormatter(fmt)
+        handlers.append(logfile)
     root = logging.getLogger()
-    root.handlers = [console, logfile]
+    root.handlers = handlers
     # Third-party libraries (HTTP clients, model loading) only log warnings; our code logs info.
     root.setLevel(logging.WARNING)
     for ours in ("cull", "culling"):
@@ -158,15 +164,53 @@ def cmd_score(args, config):
     return results
 
 
+def _vlm_help(vlm, error):
+    return (f"VLM: {error}\n"
+            f"The server at {vlm['base_url']} does not answer or does not serve {vlm['model']}. Start the vLLM "
+            f"server or the SSH tunnel (ssh -L 8000:localhost:8000 <host>) and set {vlm['api_key_env']} if the "
+            f"server needs a key; `python cull.py ping-vlm` checks the connection.")
+
+
+def cmd_judge(args, config):
+    """Grey-zone pairs for the VLM judge: select them, write the pair images and (without
+    --dry-run) ask the server and compare with labels.json. Not part of `prepare`."""
+    from culling.judge import run_judge
+    from culling.vlm import VLMError
+
+    try:
+        run_judge(args.output, config, dry_run=args.dry_run,
+                  include_faces_decided=True if args.include_faces_decided else None,
+                  max_pairs=args.max_pairs)
+    except VLMError as e:
+        sys.exit(_vlm_help(config["vlm"], e) + "\nProgress, if any, is saved in judge_verdicts.json; "
+                 "rerun the command to resume.")
+
+
+def cmd_ping_vlm(args, config):
+    from culling.vlm import VLMError, make_client
+
+    vlm = config["vlm"]
+    try:
+        client = make_client(vlm)
+    except ValueError as e:  # unknown vlm.provider: a config error, not a server problem
+        sys.exit(str(e))
+    try:
+        models = client.ping()
+    except VLMError as e:
+        sys.exit(_vlm_help(vlm, e))
+    print(f"{vlm['base_url']} serves {vlm['model']} (models: {', '.join(models)})")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Wedding photo culling pipeline")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    def add(name, help_text, needs_input):
+    def add(name, help_text, needs_input, needs_output=True):
         p = sub.add_parser(name, help=help_text)
         if needs_input:
             p.add_argument("--input", required=True, type=Path, help="wedding folder with NEF/JPG files")
-        p.add_argument("--output", required=True, type=Path, help="output folder for this wedding")
+        if needs_output:
+            p.add_argument("--output", required=True, type=Path, help="output folder for this wedding")
         p.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="config YAML")
         return p
 
@@ -183,14 +227,25 @@ def main():
     score = add("score", "compare labels.json with one or two groups files", False)
     score.add_argument("--groups", nargs="+", default=["groups.json"], metavar="FILE",
                        help="groups file(s) inside the output folder, or absolute paths (default groups.json)")
+    judge = add("judge", "grey-zone pairs (similarity judge.sim_low..sim_high) judged by the VLM; writes "
+                         "judge_pairs.json, judge_pairs.jpg, judge_pairs/ and judge_verdicts.json", False)
+    judge.add_argument("--dry-run", action="store_true",
+                       help="select the pairs and write the images, print the estimate, send nothing")
+    judge.add_argument("--include-faces-decided", action="store_true",
+                       help="also send pairs that face identities already decided (same/different)")
+    judge.add_argument("--max-pairs", type=int, default=None, metavar="N",
+                       help="judge at most N pairs (default: judge.max_pairs, 0 = all)")
+    add("ping-vlm", "check that the VLM server (config vlm) answers and serves the model", False,
+        needs_output=False)
     args = parser.parse_args()
 
     config = load_config(args.config)
-    setup_logging(args.output)
+    setup_logging(getattr(args, "output", None))
     log.info("Command: %s (config %s)", args.command, args.config)
     started = time.time()
     commands = {"prepare": cmd_prepare, "ingest": cmd_ingest, "group": cmd_group,
-                "faces": cmd_faces, "report": cmd_report, "label": cmd_label, "score": cmd_score}
+                "faces": cmd_faces, "report": cmd_report, "label": cmd_label, "score": cmd_score,
+                "judge": cmd_judge, "ping-vlm": cmd_ping_vlm}
     commands[args.command](args, config)
     log.info("Finished in %.1f s", time.time() - started)
 
