@@ -4,6 +4,7 @@
     python cull.py ingest  --input <wedding folder> --output <output folder>
     python cull.py group   --output <output folder>     # re-group after changing thresholds
     python cull.py faces   --output <output folder> [--sheets]   # face identities only
+    python cull.py segments --output <output folder> [--sheets]  # day segments (segments.json)
     python cull.py report  --output <output folder>
     python cull.py label   --output <output folder> [--port 8765] [--no-browser]   # label boundaries in the browser
     python cull.py score   --output <output folder> [--groups groups.json groups.nofaces.json]
@@ -87,7 +88,21 @@ def cmd_group(args, config, photos=None):
     sizes = [g["size"] for g in groups]
     log.info("Grouping done: %d photos -> %d groups (%d single, largest %d)",
              len(photos), len(groups), sizes.count(1), max(sizes, default=0))
+    cmd_segments(args, config, photos)
     cmd_report(args, config, photos, identities)
+
+
+def cmd_segments(args, config, photos=None):
+    """Cut the day into segments at shooting pauses, write segments.json (and the
+    contact sheets with --sheets). Returns the segments data (None when disabled)."""
+    from culling.segments import run_segments
+
+    if photos is None:
+        photos = _load_photos_or_exit(args)
+    if not config["segments"]["enabled"]:
+        log.info("Segments: disabled in config")
+        return None
+    return run_segments(args.output, config, photos, sheets=getattr(args, "sheets", False))
 
 
 def cmd_report(args, config, photos=None, identities=None):
@@ -97,6 +112,7 @@ def cmd_report(args, config, photos=None, identities=None):
     from culling.ingest import read_photos_file
     from culling.labels import boundaries, load_labels
     from culling.report import write_report
+    from culling.segments import load_segments
 
     photos_file = read_photos_file(args.output) or {}
     if photos is None:
@@ -108,7 +124,8 @@ def cmd_report(args, config, photos=None, identities=None):
     embeddings = load_cache(args.output, config["embedding"]["model_name"])
     label_data = {"boundaries": boundaries(photos, groups_data, embeddings),
                   "labels": load_labels(args.output)}
-    path = write_report(args.output, photos, groups_data, input_dir, identities, label_data)
+    path = write_report(args.output, photos, groups_data, input_dir, identities, label_data,
+                        segments_data=load_segments(args.output))
     log.info("Report: %s", path.resolve())
 
 
@@ -176,6 +193,9 @@ def main():
     faces = add("faces", "face detection + identity clustering only (identities.json)", False)
     faces.add_argument("--sheets", action="store_true",
                        help="also write faces_sheets/<identity>.jpg contact sheets for review")
+    segments = add("segments", "cut the day into segments at shooting pauses (segments.json)", False)
+    segments.add_argument("--sheets", action="store_true",
+                          help="also write segments_sheets/<segment>.jpg contact sheets for review")
     add("report", "regenerate report.html from photos.json and groups.json", False)
     label = add("label", "serve report.html locally and save ground-truth labels to labels.json", False)
     label.add_argument("--port", type=int, default=8765, help="local port (default 8765)")
@@ -190,7 +210,7 @@ def main():
     log.info("Command: %s (config %s)", args.command, args.config)
     started = time.time()
     commands = {"prepare": cmd_prepare, "ingest": cmd_ingest, "group": cmd_group,
-                "faces": cmd_faces, "report": cmd_report, "label": cmd_label, "score": cmd_score}
+                "faces": cmd_faces, "segments": cmd_segments, "report": cmd_report, "label": cmd_label, "score": cmd_score}
     commands[args.command](args, config)
     log.info("Finished in %.1f s", time.time() - started)
 

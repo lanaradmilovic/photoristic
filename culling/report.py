@@ -39,6 +39,9 @@ h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:17px; margin:28px 0 8px; }
 .group.flagged { border-color:var(--warn); }
 .ghead { display:flex; flex-wrap:wrap; gap:12px; align-items:baseline; margin-bottom:6px; }
 .ghead .gid { font-weight:600; }
+.seghead { display:flex; flex-wrap:wrap; gap:12px; align-items:baseline; margin:22px 0 6px; padding:6px 10px;
+           border-left:4px solid var(--accent); background:var(--card); border-radius:0 8px 8px 0; }
+.seghead .sid { font-weight:600; color:var(--accent); }
 .badge { font-size:12px; padding:1px 7px; border-radius:10px; background:var(--warnbg); color:var(--warn); }
 .thumbs { display:flex; flex-wrap:wrap; gap:6px; }
 figure { margin:0; width:calc(var(--tw) + 4px); }
@@ -112,7 +115,7 @@ function applyFilters() {
     g.style.display = ok ? '' : 'none';
     if (ok) shown++;
   }
-  document.querySelectorAll('.camhead').forEach(h =>
+  document.querySelectorAll('.camhead, .seghead').forEach(h =>
     h.style.display = (cam === '' || h.dataset.camera === cam) ? '' : 'none');
   document.getElementById('shown').textContent = shown;
 }
@@ -466,6 +469,29 @@ def _group_html(group, photos_by_id, low_sim, identities=None):
     )
 
 
+def _segment_bar(seg):
+    """Header strip for a day segment (segments.json), shown before its first group."""
+    st = seg.get("stats") or {}
+    n_groups = st.get("n_groups")
+    span = (f"{_clock(seg['start'])} – {_clock(seg['end'])}" if seg.get("start")
+            else "no capture time")
+    parts = [f'<span class="sid">{_e(seg["segment_id"])}</span>', f'<span class="muted">{span}</span>',
+             f'<span>{seg["n_photos"]} photos</span>']
+    if n_groups is not None:
+        parts.append(f'<span>{n_groups} groups</span>')
+    if st.get("no_people_share") is not None:
+        parts.append(f'<span class="muted">{100 * st["no_people_share"]:.0f}% no people</span>')
+    if st.get("identities"):
+        ids = ", ".join(f"{label} {n}" for label, n in st["identities"][:5])
+        parts.append(f'<span class="muted" title="known identities: photos in this segment">👤 {_e(ids)}</span>')
+    parts += [f'<span class="badge">{_e(f)}</span>' for f in seg.get("flags", [])]
+    if st.get("n_groups_crossing"):
+        parts.append(f'<span class="badge">{st["n_groups_crossing"]} groups cross the boundary</span>')
+    parts.append(f'<a href="segments_sheets/{_e(seg["segment_id"])}.jpg">sheet</a>')
+    return (f'<div class="seghead" data-camera="{_e(seg.get("camera_id") or "")}">'
+            f'{"".join(parts)}</div>')
+
+
 def _label_block(label_data, input_dir, low_sim):
     """JSON for the label mode, embedded in the page; '' when there is nothing to label."""
     if not label_data or not label_data.get("boundaries"):
@@ -476,9 +502,12 @@ def _label_block(label_data, input_dir, low_sim):
     return f'<script id="labelData" type="application/json">{text}</script>'
 
 
-def write_report(out_dir, photos, groups_data, input_dir=None, identities=None, label_data=None):
+def write_report(out_dir, photos, groups_data, input_dir=None, identities=None, label_data=None,
+                 segments_data=None):
     """`identities` is the content of identities.json (faces.py) or None. `label_data` is
-    {boundaries: labels.boundaries(...), labels: labels.load_labels(...)} for the label mode."""
+    {boundaries: labels.boundaries(...), labels: labels.load_labels(...)} for the label mode.
+    `segments_data` is the content of segments.json (segments.py) or None; with it, a
+    header strip is inserted before the first group of every day segment."""
     out_dir = Path(out_dir)
     groups = groups_data["groups"]
     cfg = groups_data["config_used"]
@@ -521,13 +550,19 @@ def write_report(out_dir, photos, groups_data, input_dir=None, identities=None, 
     cam_rows = "".join(f"<tr><td>{_e(c)}</td><td><b>{n}</b></td></tr>" for c, n in sorted(per_camera.items()))
     cam_options = "".join(f'<option value="{_e(c)}">{_e(c)} ({n})</option>' for c, n in sorted(per_camera.items()))
 
-    body, last_camera = [], None
+    seg_of_group = {gid: seg for seg in (segments_data or {}).get("segments", [])
+                    for gid in seg.get("group_ids", [])}
+    body, last_camera, last_segment = [], None, None
     for g in groups:
         if g["camera_id"] != last_camera:
             n_groups = sum(1 for x in groups if x["camera_id"] == g["camera_id"])
             body.append(f'<h2 class="camhead" data-camera="{_e(g["camera_id"])}">Camera {_e(g["camera_id"])} '
                         f'<span class="muted">· {n_groups} groups</span></h2>')
             last_camera = g["camera_id"]
+        seg = seg_of_group.get(g["group_id"])
+        if seg is not None and seg["segment_id"] != last_segment:
+            body.append(_segment_bar(seg))
+            last_segment = seg["segment_id"]
         body.append(_group_html(g, photos_by_id, low_sim, identities))
 
     problem_rows = "".join(

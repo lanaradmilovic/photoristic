@@ -125,3 +125,14 @@ vlm:
   timeout_seconds: 120
   max_retries: 3
   image_long_edge: 1024         # previews are downscaled to this before sending (context budget)
+
+segments:
+  # Day segmentation (culling/segments.py): per camera, a new segment starts wherever the
+  # pause between two consecutive photos is longer than gap_seconds. Segments are the
+  # parts of the day (preparations, formals, church, couple session, speeches, party) and
+  # the input for later per-segment grouping profiles and VLM classification. Runs after
+  # grouping in `prepare`; `cull.py segments --output <out> --sheets` re-runs it alone.
+  enabled: true
+  gap_seconds: 300            # 5 min; checked on the talici folders with 180 / 300 / 600 (see PLAN.md)
+  min_photos: 5               # segments with fewer photos get the flag "tiny"; they are never merged
+  sheet_max_thumbs: 48        # thumbnails per contact sheet in segments_sheets/, sampled evenly in time

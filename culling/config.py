@@ -73,6 +73,13 @@ DEFAULTS = {
         "max_group_size": 0,  # 0 = never split groups (chunking belongs to the VLM step)
         "report_low_similarity": 0.85,
     },
+    "segments": {
+        # Day segmentation: a new segment starts at a shooting pause longer than gap_seconds.
+        "enabled": True,
+        "gap_seconds": 300,
+        "min_photos": 5,
+        "sheet_max_thumbs": 48,
+    },
     "vlm": {
         "provider": "openai_compatible",
         "base_url": "http://localhost:8000/v1",

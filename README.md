@@ -30,6 +30,10 @@ See [PLAN.md](PLAN.md) for phases, status and open questions.
         │  embeddings.npz, people.json, faces.npz, identities.json,
         │  groups.json, report.html (culling/report.py)
         ▼
+ 2b. SEGMENTS         culling/segments.py                             [done]
+    cut the day into parts at shooting pauses (> 5 min), per-segment statistics
+        │  segments.json, segments_sheets/ (--sheets)
+        ▼
  3. SCORE (VLM)       Qwen3.5-9B on vLLM, one request per group     [planned]
     structured JSON per photo: decision, rank, eyes, blur, distractions,
     moment type, reason
@@ -152,6 +156,45 @@ This re-groups from the cached embeddings and rewrites `report.html` in seconds.
 
 ---
 
+## Day segments (step 2b)
+
+A wedding day is shot in parts with very different rhythms: preparations, family formals,
+the church, the couple session, speeches, the first dance, the party. `culling/segments.py`
+finds those parts without any model: per camera, photos are sorted by capture time and a new
+segment starts wherever the pause between two neighbours is longer than `segments.gap_seconds`
+(300 s). Photos without a capture time (or that failed ingest) go to one segment `unknown`.
+Segments with fewer than `segments.min_photos` photos get the flag `tiny` but are never merged.
+`prepare` and `group` run it after grouping; on its own:
+
+```bash
+.venv\Scripts\python cull.py segments --output D:\cull4-06-15 --sheets
+```
+
+This writes `segments.json`, prints one table row per segment and, with `--sheets`, one contact
+sheet per segment in `segments_sheets/<segment_id>.jpg` (up to `sheet_max_thumbs` thumbnails
+sampled evenly in time, each with the file number and clock time). The report shows a header
+strip before the first group of every segment (id, time span, photos, groups, share without
+people, main identities, link to the sheet). The segments are the input for later per-segment
+grouping profiles and for a VLM that names the part of the day.
+
+**`segments.json`:** `{created, gap_seconds, min_photos, n_segments, n_tiny, n_unknown_photos,
+groups_crossing, segments: [segment…]}`.
+
+| Segment field | Meaning |
+|---|---|
+| `segment_id` | `S01`, `S02`, … in camera order then time order; `unknown` for the undated photos |
+| `camera_id`, `start`, `end`, `duration_seconds` | Camera and time span (`null` for `unknown`) |
+| `n_photos`, `photo_ids` | Photos in capture order; `unknown` also has `reasons` (`no_timestamp` / `ingest_error`) per photo |
+| `group_ids` | Groups from `groups.json` whose first photo lies in the segment |
+| `flags` | `tiny` (fewer than `min_photos`), `unknown` |
+| `stats.median_gap_s`, `stats.p90_gap_s`, `stats.burst_share` | Rhythm: median and 90th percentile of the gaps between neighbours, share of gaps under 2 s (`null` with one photo) |
+| `stats.no_people_share` | Share of photos without a person (`people.json`; `null` without it) |
+| `stats.median_faces`, `stats.identities` | Median faces per photo and the known identities with their photo counts, top 10 (`identities.json`; `null` / `[]` without it) |
+| `stats.portrait_share` | Share of portrait-orientation frames |
+| `stats.n_groups`, `stats.n_groups_crossing` | Groups entirely inside the segment, and groups with photos on both sides of a boundary (should be 0; the top-level `groups_crossing` lists them) |
+
+---
+
 ## Output folder
 
 | File | Written by | Content |
@@ -165,6 +208,8 @@ This re-groups from the cached embeddings and rewrites `report.html` in seconds.
 | `identities.json` | group / faces | `{threshold, identities: {label: {n_faces, n_photos}}, photos: {sha256: {ids, faces, n_faces}}}` |
 | `faces_sheets/<label>.jpg` | faces --sheets | contact sheet of all faces of one identity (review only) |
 | `groups.json` | group | `{created, config_used, n_groups, n_photos, groups: [group…]}` |
+| `segments.json` | group / segments | day segments at shooting pauses, with per-segment statistics (see *Day segments*) |
+| `segments_sheets/<segment_id>.jpg` | segments --sheets | contact sheet of one segment (review only) |
 | `report.html` | group / report | visual check of the groups; also the labelling tool (*Label mode*) |
 | `labels.json` | label | ground truth: `[{a_sha, b_sha, a_name, b_name, label: same|different|unsure, labeled_at}, …]`, one entry per labelled boundary between two time-adjacent photos of one camera |
 | `errors.jpg`, `errors.<suffix>.jpg` | score | contact sheet of the boundaries where the grouping disagrees with the labels (`errors.nofaces.jpg` for `groups.nofaces.json`) |
@@ -242,8 +287,9 @@ Then open `D:\cull\2024-06-15\report.html` in a browser.
 |---|---|
 | `prepare --input X --output Y` | Ingest → embeddings → grouping → report. Safe to re-run: unchanged files are not re-processed. |
 | `ingest --input X --output Y` | Step 1 only. |
-| `group --output Y` | Embeddings, people, faces (all cached) → grouping → report. Use it after changing thresholds. |
+| `group --output Y` | Embeddings, people, faces (all cached) → grouping → segments → report. Use it after changing thresholds. |
 | `faces --output Y [--sheets]` | Face detection + identity clustering only; `--sheets` writes `faces_sheets/` for review. |
+| `segments --output Y [--sheets]` | Cut the day into segments at shooting pauses → `segments.json`; `--sheets` writes `segments_sheets/`. |
 | `report --output Y` | Rebuild `report.html` from the existing JSON files. |
 | `label --output Y [--port 8765] [--no-browser]` | Rebuild the report, serve it on `127.0.0.1` and save ground-truth labels to `labels.json` (see *Labelling ground truth*). |
 | `score --output Y [--groups F [F]]` | Compare `labels.json` with `groups.json` (or the given file(s), one or two) and write `errors.jpg`. |
@@ -358,6 +404,7 @@ culling/embed.py      DINOv2 embeddings + cache
 culling/people.py     person detection (RT-DETR) + cache
 culling/faces.py      face detection (SCRFD), alignment, ArcFace embeddings, identity clustering
 culling/grouping.py   grouping algorithm + groups.json
+culling/segments.py   day segments at shooting pauses + segments.json + segments_sheets/
 culling/report.py     report.html (group view + label mode)
 culling/labels.py     labels.json I/O, boundaries between adjacent photos, scoring, errors.jpg
 culling/labelserver.py local http server for `cull.py label` (GET/POST /labels)
