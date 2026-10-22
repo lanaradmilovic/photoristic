@@ -29,6 +29,19 @@ DEFAULTS = {
         "score_threshold": 0.6,
         "min_box_area_fraction": 0.02,
     },
+    "faces": {
+        # Face detection + recognition (local ONNX, CPU); identities feed grouping.
+        "enabled": True,
+        "detector_path": "models/auraface/scrfd_10g_bnkps.onnx",
+        "embedder_path": "models/auraface/glintr100.onnx",
+        "det_size": 640,
+        "det_threshold": 0.5,
+        "nms_threshold": 0.4,
+        "min_face_size": 24,
+        "identity_threshold": 0.4,
+        "identity_merge_threshold": 0.45,
+        "min_identity_faces": 10,
+    },
     "grouping": {
         "time_gap_seconds": 4.0,
         "similarity_threshold": 0.75,
@@ -43,6 +56,17 @@ DEFAULTS = {
         "nopeople_gap_seconds": 45.0,
         "nopeople_similarity_threshold": 0.80,
         "nopeople_lookback_similarity_threshold": 0.86,
+        # Relaxed rules when BOTH photos show exactly the same identified people
+        # (faces.enabled): the same couple in a new pose is one group even when
+        # DINOv2 similarity is low. Photos with no identity in common never join.
+        "faces_gap_seconds": 60.0,
+        "faces_similarity_threshold": 0.70,
+        "faces_lookback_similarity_threshold": 0.70,
+        "faces_min_mean_similarity_to_group": 0.65,
+        # Let an unidentified face stand in for a missing known person when deciding
+        # "same people" ({A,B} vs {B}+1 unknown). Off: an unknown face could be the
+        # next guest in a congratulation line.
+        "faces_same_allows_unknown": False,
         "max_group_span_seconds": 180,
         "refine_boundaries": True,
         "refine_margin": 0.02,

@@ -27,6 +27,38 @@ people:
   score_threshold: 0.6        # detection confidence for a person box
   min_box_area_fraction: 0.02 # ignore tiny background figures (< 2% of the frame)
 
+faces:
+  # Face detection + recognition (local ONNX models on CPU, nothing leaves the machine).
+  # Faces are clustered per wedding into identities (A, B, C, ... by frequency, so the
+  # couple is normally A and B). Grouping uses them: two photos that show exactly the
+  # SAME identified people may join under the relaxed faces_* rules below; photos whose
+  # identified people do not overlap at all never join (the "different guest, same
+  # spot" DINOv2 failure). Set enabled: false to get the pre-faces behaviour.
+  enabled: true
+  detector_path: models/auraface/scrfd_10g_bnkps.onnx   # SCRFD-10G, 5 keypoints (Apache 2.0)
+  embedder_path: models/auraface/glintr100.onnx         # AuraFace = ArcFace ResNet100, 512-d
+  det_size: 640               # long edge the 1536 px preview is downscaled to for detection
+  det_threshold: 0.5          # detection confidence for a face
+  nms_threshold: 0.4
+  min_face_size: 24           # px (box side) in the preview; smaller background faces are ignored
+  # Cosine similarity between two face embeddings that counts as the same person.
+  # Measured on talici 4a (1108 faces): at 0.5 the bride split into frontal (77 faces)
+  # + veil/profile clusters; at 0.4 bride and groom are ~100 faces each and still pure;
+  # at 0.3 guests start to merge. Check faces_sheets/ after `cull.py faces --sheets`.
+  identity_threshold: 0.4
+  # Second pass: clusters whose average face (centroid) is at least this similar are
+  # the same person. Needed because the first pass keeps tight sub-clusters apart:
+  # on Talici 1 the bride with heart sunglasses (228 faces) and without (209) had
+  # centroid similarity 0.59, while centroids of different people stay below ~0.35.
+  identity_merge_threshold: 0.45
+  # An identity counts as a known person for grouping only with at least this many
+  # faces; rarer faces are "unknown" and neither relax nor block a merge. Needed
+  # because small clusters are often one person's odd angle: on Talici 1 the groom
+  # kissing in profile formed a 3-face identity that "differed" from the groom and
+  # split the kiss sequence; on 4a one-off faces blocked 26 groups. The couple and
+  # the family have tens to hundreds of faces, so 10 keeps them.
+  min_identity_faces: 10
+
 grouping:
   # Two consecutive photos (same camera) join the same group if EITHER:
   #   (a) gap <= time_gap_seconds     AND similarity >= similarity_threshold
@@ -58,6 +90,21 @@ grouping:
   nopeople_gap_seconds: 45.0
   nopeople_similarity_threshold: 0.80
   nopeople_lookback_similarity_threshold: 0.86
+  # Relaxed rules when BOTH photos show exactly the same identified people (same set
+  # of identities AND the same number of detected faces; requires faces.enabled).
+  # Set from the Talici 1 couple session: the same couple at the same spot in a new
+  # pose scores only 0.72 (8033 -> 8049, 94 s later) and 0.74 (8137 -> 8138, 6 s).
+  # Photos with identified people but no identity in common are never joined.
+  faces_gap_seconds: 60.0
+  faces_similarity_threshold: 0.70
+  faces_lookback_similarity_threshold: 0.70
+  faces_min_mean_similarity_to_group: 0.65
+  # "Same people" normally needs identical sets of known identities. With true, a face
+  # that could not be identified (a profile seen too rarely to become an identity) may
+  # stand in for a missing known person: {A,B} vs {B} + 1 unknown counts as the same
+  # couple. Merges more of a couple session (Talici 1: 8028 -> 8029, the bride in
+  # profile) but an unknown face may also be the NEXT guest in a congratulation line.
+  faces_same_allows_unknown: false
   # After grouping, a photo at the border of two groups moves to the other group if
   # its average similarity there is higher by more than refine_margin.
   refine_boundaries: true

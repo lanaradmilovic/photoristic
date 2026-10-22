@@ -360,3 +360,22 @@ If startup fails for lack of memory, drop to `--max-model-len 16384`.
   - Diagnosed the user's 12 missed pairs and compared 4 embedding models.
   - Added look-back grouping (tuning round 2).
   - 27 tests pass.
+- **Session 3 (2026-10-21): face identities as a grouping signal** (`culling/faces.py`, `tests/test_faces.py`).
+  - **Why:** on all five talici folders DINOv2 cannot separate "same couple, new pose" (wanted merge, measured 0.72–0.90 on Talici 1: 8033→8049 0.72 after 94 s, 8137→8138 0.74, 8134→8135 0.75) from "different guest, same spot" (forbidden, 0.88 on 4a). Threshold tuning cannot fix feature overlap.
+  - **What:** SCRFD-10G face detection on the 1536 px preview + ArcFace alignment (numpy similarity transform, PIL warp; no OpenCV) + AuraFace/glintr100 512-d embeddings, both ONNX on CPU (`models/auraface/`, Apache 2.0). Cached in `faces.npz` by sha256. Per wedding, Chinese-Whispers clustering into identities at `faces.identity_threshold`, labels A, B, … by frequency (`identities.json`).
+  - **Rule in grouping:** photo signature = (identity set, number of faces). Same people → relaxed `faces_*` thresholds (60 s / 0.70 / look-back 0.70 / drift guard 0.65). No identity in common → never joined. Anything else → unchanged. Groups changed by the rule carry flags `faces` / `faces_split` and badges in the report. `faces.enabled: false` reproduces the old output exactly (tested).
+  - **Speed (CPU, 16 cores):** 0.31 s/photo on Talici 1 (2 faces/photo), 0.42 s/photo on 4a (3.4 faces/photo); detection 0.09 s, embedding 0.09 s per face. `det_size` 1024 found only 3 more faces per 50 ceremony photos for +0.11 s/photo, so 640 stays.
+  - **Identity clustering, measured:** AuraFace cosine similarity needs 0.40, not the usual 0.5 (at 0.5 the 4a bride split into frontal + veil/profile clusters). Chinese Whispers at 0.4 still kept the Talici 1 bride with heart sunglasses (228 faces) apart from without (209): centroid similarity 0.59, while centroids of different people stay ≤ 0.32 on both folders ⇒ second pass merges clusters at centroid similarity ≥ 0.45 (`identity_merge_threshold`). Small clusters are often one person's odd angle (groom kissing in profile = own 3-face identity), so only identities with ≥ 10 faces count for grouping (`min_identity_faces`); rarer faces are "unknown" and neutral. One-off faces are ~0.3 to every centroid, the same as unrelated faces, so they cannot be soft-assigned.
+  - **Rule details, measured:** "different people" must not break a burst (within `time_gap_seconds`): at the 4a altar the groom's face is hidden in one frame and the bride's in the next (9852→9853, 0.6 s), which split a 5-photo group. Blocking now applies only to the extended-gap, look-back and no-people joins.
+  - **Results (faces off → on, same DINOv2 config):**
+
+    | Folder | Groups | Singles | Largest | Face-merged groups | Blocked joins | Test pairs |
+    |---|---|---|---|---|---|---|
+    | talici 4a (334) | 155 → 150 | 79 → 71 | 16 → 10 | 8 | 1 | 9975/9976↔9982 and 9852–9856↔9860/9861 stay apart ✓ |
+    | Talici 1 (711) | 279 → 221 | 152 → 117 | 27 → 37 | 37 | 0 | 8134–8138 ✓, 8033–8049 ✓, 8026–8030 ✗ (bride in profile unidentified in 8029/8030) |
+
+    Identities: 4a 1108 faces → bride and groom 100/105 faces, both pure; Talici 1 1266 faces → bride 437, groom 337, both pure; ~15 % of faces are one-off profiles/background faces.
+  - **Trade-offs seen in the review sheets:** the relaxed look-back at 0.70 (needed for 8033→8049 at 0.72) also chains different compositions of one scene: Talici 1 g0077 (21 photos: dark alley far, bright alley walking, posed at the wall; weakest links 0.72), 4a g0111 (altar close-ups + the wide shot with the officiant, 0.71 after 115 s). `faces_lookback_similarity_threshold: 0.80` would avoid these but loses 8033–8049.
+  - `faces_same_allows_unknown: true` (an unidentified face may stand in for a missing known person) merges 8026–8030 (Talici 1 → 213 groups) but on 4a (→ 145 groups) also joins the couple walking in (0041, two unknown guests) with the altar sequence and the vows close-ups (0095–0097) with 0074/0075. Left off by default; the user decides.
+  - Known structural limit: when the guest's face is hidden in both frames of two different hugs, faces see `{bride}` vs `{bride}` and cannot tell the hugs apart (9857/9859 happened to be the same guest). The VLM step's "different people in group" check remains the safety net.
+  - 54 tests pass. Not committed: pending the user's review of `report.html` and `faces_sheets/` on both folders.

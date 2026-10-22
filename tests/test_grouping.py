@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from culling.config import DEFAULTS
-from culling.grouping import check_every_photo_once, group_photos, split_evenly
+from culling.grouping import check_every_photo_once, group_photos, identity_relation, split_evenly
 
 T0 = datetime(2024, 6, 15, 16, 0, 0)
 DIM = 16
@@ -288,3 +288,144 @@ def test_oversized_group_splits_at_the_weakest_similarity():
                       lookback_seconds=0)
     assert [g["size"] for g in groups] == [4, 9]
     assert ids_per_group(groups) == [first, rest]
+
+
+# ------------------------------------------------------------ face identities
+
+def _identity_map(shoot, sigs):
+    """sha256 -> (frozenset of identity labels, n_faces) in order of creation."""
+    return {p["sha256"]: (frozenset(ids), n) for p, (ids, n) in zip(shoot.photos, sigs)}
+
+
+def test_identity_relation():
+    same = (frozenset({"A", "B"}), 2)
+    assert identity_relation(same, (frozenset({"A", "B"}), 2)) == "same"
+    assert identity_relation(same, (frozenset({"A", "B"}), 3)) is None     # extra unidentified face
+    assert identity_relation(same, (frozenset({"A", "C"}), 2)) is None     # partial overlap
+    assert identity_relation(same, (frozenset({"C"}), 1)) == "different"
+    assert identity_relation(same, (frozenset(), 0)) is None              # nobody identified
+    assert identity_relation(same, None) is None
+    assert identity_relation((frozenset(), 1), (frozenset(), 1)) is None
+    # An unknown face may stand in for a missing known person only when allowed.
+    profile = (frozenset({"B"}), 2)
+    assert identity_relation(same, profile) is None
+    assert identity_relation(same, profile, allow_unknown=True) == "same"
+    assert identity_relation(profile, same, allow_unknown=True) == "same"
+    assert identity_relation(same, (frozenset({"B"}), 1), allow_unknown=True) is None   # counts differ
+    assert identity_relation(same, (frozenset({"C"}), 2), allow_unknown=True) == "different"
+
+
+def test_different_people_never_break_a_burst():
+    # A face hidden in one frame of a 0.6 s burst is not a change of people.
+    s = Shoot()
+    a = s.add(0, unit(0))
+    b = s.add(0.6, mix(unit(0), unit(1), 0.95))
+    ids = _identity_map(s, [(["A"], 1), (["B"], 1)])
+    groups = group_photos(s.photos, s.embeddings, CFG, None, ids)
+    assert ids_per_group(groups) == [[a, b]] and groups[0]["flags"] == []
+    # The same pair 10 s apart is only an extended-gap join: blocked.
+    s = Shoot()
+    a = s.add(0, unit(0))
+    b = s.add(10, mix(unit(0), unit(1), 0.95))
+    ids = _identity_map(s, [(["A"], 1), (["B"], 1)])
+    assert ids_per_group(group_photos(s.photos, s.embeddings, CFG, None, ids)) == [[a], [b]]
+
+
+def test_unknown_face_can_complete_the_couple_when_allowed():
+    # 8028 {A,B} -> 8029 {B}+1 unknown at 0.894 after 48 s (Talici 1).
+    s = Shoot()
+    a = s.add(0, unit(0))
+    b = s.add(48, mix(unit(0), unit(1), 0.894))
+    ids = _identity_map(s, [(["A", "B"], 2), (["B"], 2)])
+    assert ids_per_group(group_photos(s.photos, s.embeddings, CFG, None, ids)) == [[a], [b]]
+    cfg = {**CFG, "faces_same_allows_unknown": True}
+    groups = group_photos(s.photos, s.embeddings, cfg, None, ids)
+    assert ids_per_group(groups) == [[a, b]] and "faces" in groups[0]["flags"]
+
+
+def test_same_people_merge_low_similarity_lookback_and_neighbour():
+    # Talici 1 shapes: 8033 -> 8049 at 0.72 after 94 s with other groups between
+    # (look-back); 8137 -> 8138 at 0.74 after 6 s (neighbour). Both show the couple.
+    s = Shoot()
+    a1 = s.add(0, unit(0))
+    o1 = s.add(30, unit(1))
+    o2 = s.add(60, unit(2))
+    a2 = s.add(94, mix(unit(0), unit(3), 0.72))
+    a3 = s.add(100, mix(s.embeddings[s.photos[-1]["sha256"]], unit(4), 0.80))  # 0.80 to a2, 0.58 to a1
+    couple = (["A", "B"], 2)
+    ids = _identity_map(s, [couple, (["C"], 1), (["C"], 1), couple, couple])
+    groups = group_photos(s.photos, s.embeddings, CFG, None, ids)
+    assert ids_per_group(groups) == [[a1, a2, a3], [o1], [o2]]
+    assert groups[0]["joined_by"] == ["lookback", "neighbour"]
+    assert "faces" in groups[0]["flags"]
+    # Without identities the same numbers stay apart (0.72 < 0.90 look-back, 0.80 < 0.82).
+    assert ids_per_group(s.groups()) == [[a1], [o1], [o2], [a2], [a3]]
+
+
+def test_different_people_block_a_join_the_usual_rules_allow():
+    # Two guests at the same spot, DINOv2 0.95: the usual rules would merge them.
+    s = Shoot()
+    a = s.add(0, unit(0))
+    b = s.add(1, mix(unit(0), unit(1), 0.95))
+    c = s.add(2, mix(unit(0), unit(2), 0.95))
+    ids = _identity_map(s, [(["C"], 1), (["D"], 1), (["C"], 1)])
+    groups = group_photos(s.photos, s.embeddings, CFG, None, ids)
+    assert ids_per_group(groups) == [[a, b, c]]          # 1 s apart: a burst is never blocked
+    # 10 s apart (extended-gap rule) the different people keep them apart.
+    s = Shoot()
+    a = s.add(0, unit(0))
+    b = s.add(10, mix(unit(0), unit(1), 0.95))
+    c = s.add(20, mix(unit(0), unit(2), 0.95))
+    ids = _identity_map(s, [(["C"], 1), (["D"], 1), (["C"], 1)])
+    groups = group_photos(s.photos, s.embeddings, CFG, None, ids)
+    assert ids_per_group(groups) == [[a, c], [b]]        # c returns to a by look-back
+    assert "faces_split" in groups[1]["flags"]
+    assert "faces_split" in groups[0]["flags"]           # c's neighbour join to b was blocked
+    assert ids_per_group(s.groups()) == [[a, b, c]]
+
+
+def test_neutral_relations_change_nothing():
+    s = Shoot()
+    a = s.add(0, unit(0))
+    b = s.add(1, mix(unit(0), unit(1), 0.95))      # joins by the usual rule
+    c = s.add(30, mix(unit(0), unit(2), 0.80))     # too weak for look-back, stays apart
+    for sigs in ([(["A"], 1), ([], 0), ([], 0)],            # nobody identified on one side
+                 [(["A", "B"], 2), (["A", "C"], 2), (["A"], 1)],  # partial overlap
+                 [(["A"], 1), (["A"], 2), (["A"], 3)]):           # same person, extra faces
+        ids = _identity_map(s, sigs)
+        groups = group_photos(s.photos, s.embeddings, CFG, None, ids)
+        assert ids_per_group(groups) == [[a, b], [c]]
+        assert not any(f.startswith("faces") for g in groups for f in g["flags"])
+
+
+def test_refine_never_moves_a_photo_next_to_different_people():
+    # Same gram matrix as test_boundary_photo_moves_to_the_group_it_resembles, but p1
+    # shows a different person than p2/p3: it must stay with p0.
+    gram = np.array([
+        [1.00, 0.81, 0.69, 0.72],
+        [0.81, 1.00, 0.80, 0.87],
+        [0.69, 0.80, 1.00, 0.86],
+        [0.72, 0.87, 0.86, 1.00],
+    ])
+    vecs = np.linalg.cholesky(gram).astype(np.float32)
+    s = Shoot()
+    ids_ = [s.add(t, np.pad(v, (0, DIM - 4))) for t, v in zip([0, 4, 9.1, 10.4], vecs)]
+    ids = _identity_map(s, [(["A"], 1), (["A"], 1), (["B"], 1), (["B"], 1)])
+    assert ids_per_group(group_photos(s.photos, s.embeddings, CFG, None, ids)) == [ids_[:2], ids_[2:]]
+    # p1 unidentified: neutral everywhere, so the boundary move happens as without faces.
+    ids = _identity_map(s, [(["A"], 1), ([], 1), (["B"], 1), (["B"], 1)])
+    assert ids_per_group(group_photos(s.photos, s.embeddings, CFG, None, ids)) == [[ids_[0]], ids_[1:]]
+
+
+def test_no_identities_is_identical_to_the_current_behaviour():
+    rng = np.random.default_rng(0)
+    s = Shoot()
+    t = 0.0
+    for i in range(300):
+        t += float(rng.choice([0.1, 0.5, 3.0, 20.0]))
+        v = rng.normal(size=DIM).astype(np.float32)
+        s.add(t, v / np.linalg.norm(v), camera=f"SN{i % 2}")
+    without = group_photos(s.photos, s.embeddings, CFG)
+    empty = group_photos(s.photos, s.embeddings, CFG, None, {p["sha256"]: (frozenset(), 0) for p in s.photos})
+    assert ids_per_group(without) == ids_per_group(empty)
+    assert [g["flags"] for g in without] == [g["flags"] for g in empty]

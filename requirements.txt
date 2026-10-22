@@ -2,6 +2,7 @@
 #   pip install torch --index-url https://download.pytorch.org/whl/cpu
 torch>=2.2
 transformers>=4.45
+onnxruntime>=1.17        # face detection (SCRFD) + recognition (AuraFace/ArcFace), models in models/auraface/
 rawpy>=0.21
 exifread>=3.0
 Pillow>=10.0

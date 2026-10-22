@@ -45,6 +45,7 @@ figure img { display:block; max-width:var(--tw); max-height:var(--tw); border-ra
 figcaption { font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 figcaption .low { color:var(--warn); font-weight:600; }
 figcaption .back { color:var(--accent); }
+figcaption.faces { color:var(--text); }
 #lightbox { position:fixed; inset:0; background:rgba(0,0,0,.88); display:none; z-index:10;
             align-items:center; justify-content:center; flex-direction:column; color:#eee; }
 #lightbox img { max-width:94vw; max-height:88vh; }
@@ -113,7 +114,25 @@ def _clock(iso):
     return s
 
 
-def _figure(photo, gap, sim, low_sim, boundary=False, returned=False, moved=False):
+def _faces_caption(photo, identities):
+    """'👤2 A,B' for a photo with two faces identified as A and B; '' without identities."""
+    if not identities:
+        return ""
+    info = identities["photos"].get(photo.get("sha256"))
+    if info is None:
+        return ""
+    min_faces = identities.get("min_identity_faces", 1)
+    known = [l for l in info["ids"] if identities["identities"][l]["n_faces"] >= min_faces]
+    unknown = len(info["faces"]) - sum(1 for l in info["faces"] if l in known)
+    ids = ",".join(known) if known else "–"
+    if unknown:
+        ids += f" +{unknown}?"
+    title = (f'{info["n_faces"]} face(s); known identities: {",".join(known) or "none"}; '
+             f'{unknown} face(s) of people seen fewer than {min_faces} times')
+    return f'<figcaption class="faces" title="{_e(title)}">👤{info["n_faces"]} {_e(ids)}</figcaption>'
+
+
+def _figure(photo, gap, sim, low_sim, boundary=False, returned=False, moved=False, identities=None):
     name = Path(photo["primary_path"]).name
     if photo["jpg_path"] and photo["nef_path"]:
         name += " +JPG"
@@ -145,18 +164,19 @@ def _figure(photo, gap, sim, low_sim, boundary=False, returned=False, moved=Fals
         f'<figure data-preview="{_e(preview)}" data-caption="{_e(caption)}">'
         f'<img loading="lazy" src="{_e(thumb)}" alt="{_e(name)}" title="{_e(caption)}">'
         f'<figcaption>{_e(name)}</figcaption>'
-        f'<figcaption>{info or "&nbsp;"}</figcaption></figure>'
+        f'<figcaption>{info or "&nbsp;"}</figcaption>{_faces_caption(photo, identities)}</figure>'
     )
 
 
-def _group_html(group, photos_by_id, low_sim):
+def _group_html(group, photos_by_id, low_sim, identities=None):
     flags = list(group["flags"])
     if group["min_similarity"] is not None and group["min_similarity"] < low_sim:
         flags.append("low similarity")
     if group["split_part"]:
         i, n = group["split_part"]
         flags = [f for f in flags if f != "split"] + [f"split {i}/{n} of {group['split_from']}"]
-    labels = {"lookback": "returned to scene", "moved": "boundary adjusted"}
+    labels = {"lookback": "returned to scene", "moved": "boundary adjusted",
+              "faces": "joined: same people", "faces_split": "kept apart: different people"}
     flags = [labels.get(f, f) for f in flags]
     joined_by = group.get("joined_by") or ["neighbour"] * (group["size"] - 1)
     flagged = "1" if flags else "0"
@@ -169,12 +189,13 @@ def _group_html(group, photos_by_id, low_sim):
         photo = photos_by_id[pid]
         if idx == 0:
             figures.append(_figure(photo, group["boundary_gap_seconds"],
-                                   group["boundary_similarity"], low_sim, boundary=True))
+                                   group["boundary_similarity"], low_sim, boundary=True,
+                                   identities=identities))
         else:
             figures.append(_figure(photo, group["consecutive_gaps_seconds"][idx - 1],
                                    group["consecutive_similarities"][idx - 1], low_sim,
                                    returned=joined_by[idx - 1] == "lookback",
-                                   moved=joined_by[idx - 1] == "moved"))
+                                   moved=joined_by[idx - 1] == "moved", identities=identities))
     return (
         f'<div class="group{" flagged" if flags else ""}" data-size="{group["size"]}" '
         f'data-camera="{_e(group["camera_id"])}" data-flagged="{flagged}">'
@@ -185,7 +206,8 @@ def _group_html(group, photos_by_id, low_sim):
     )
 
 
-def write_report(out_dir, photos, groups_data, input_dir=None):
+def write_report(out_dir, photos, groups_data, input_dir=None, identities=None):
+    """`identities` is the content of identities.json (faces.py) or None."""
     out_dir = Path(out_dir)
     groups = groups_data["groups"]
     cfg = groups_data["config_used"]
@@ -204,6 +226,18 @@ def write_report(out_dir, photos, groups_data, input_dir=None):
         ("single photos", singles), ("failed", len(failed)), ("no timestamp", len(no_time)),
         ("photos / group", f"{len(photos) / max(len(groups), 1):.2f}"),
     ]
+    faces_note = ""
+    if identities:
+        n_faces = sum(v["n_faces"] for v in identities["photos"].values())
+        min_faces = identities.get("min_identity_faces", 1)
+        n_ids = sum(1 for v in identities["identities"].values() if v["n_faces"] >= min_faces)
+        stats += [("faces", n_faces), (f"identities (≥{min_faces} faces)", n_ids)]
+        faces_note = (f' <b>👤</b> shows the number of faces and their identity labels '
+                      f'(A = most frequent person; identity threshold {identities["threshold"]}; '
+                      f'"+2?" = two faces of people seen fewer than {min_faces} times, which '
+                      f'neither join nor separate groups). '
+                      f'Badge <i>joined: same people</i> marks a group that face identity merged, '
+                      f'<i>kept apart: different people</i> one that it kept from merging.')
     stats_html = "".join(f'<div class="stat"><b>{_e(v)}</b>{_e(k)}</div>' for k, v in stats)
 
     max_count = max(sizes.values()) if sizes else 1
@@ -223,7 +257,7 @@ def write_report(out_dir, photos, groups_data, input_dir=None):
             body.append(f'<h2 class="camhead" data-camera="{_e(g["camera_id"])}">Camera {_e(g["camera_id"])} '
                         f'<span class="muted">· {n_groups} groups</span></h2>')
             last_camera = g["camera_id"]
-        body.append(_group_html(g, photos_by_id, low_sim))
+        body.append(_group_html(g, photos_by_id, low_sim, identities))
 
     problem_rows = "".join(
         f"<tr><td>{_e(p['primary_path'])}</td><td>{_e(p['error'] or 'no capture time in EXIF')}</td></tr>"
@@ -251,7 +285,7 @@ For the first photo of a group these refer to the previous group, i.e. why the g
 <span style="color:var(--accent)">↩</span> marks a photo that joined by look-back (the photographer returned to the scene):
 time since the group's last photo and similarity to its best-matching photo.
 <span style="color:var(--accent)">⇄</span> marks a photo moved here from the neighbouring group because it is more similar to this group.
-Similarities below {low_sim} are highlighted. Click a thumbnail to open the preview (←/→ to move, Esc to close).</p>
+Similarities below {low_sim} are highlighted.{faces_note} Click a thumbnail to open the preview (←/→ to move, Esc to close).</p>
 <div class="controls">
   <label><input type="checkbox" id="hideSingles"> hide single photos</label>
   <label><input type="checkbox" id="onlyFlagged"> only flagged groups</label>
