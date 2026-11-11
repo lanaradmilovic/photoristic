@@ -12,6 +12,9 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
   one side and absent on the other blocks the join. Risk: a turned head hides a face while the
   person is still there — measure with `cull.py score` on 4a before and after, and look at Talici 1
   party groups. The VLM prompt already carries the rule.
+- **AWS: bring up the vLLM server (user).** Stuck at step 5 (no GPU capacity in Frankfurt).
+  Status and the step-by-step guide: [aws-setup.md](aws-setup.md). When the user wants to continue,
+  read "Dokle se stiglo" there and list the remaining steps in Serbian, simple and short.
 - **VLM judge: first real run (user).** Needs the user's choice of model and server or API key.
   Steps: [spec/vlm-judge.md](spec/vlm-judge.md#running). Before paying for ~690 calls consider:
   dedupe look-back per pair of groups, skip joined bursts, `sim_low` 0.79

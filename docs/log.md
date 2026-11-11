@@ -39,3 +39,6 @@ link them here instead of copying.
 ## Session 5 — 2026-11-11
 - Documentation restructured on branch `docs`: short `CLAUDE.md`, `docs/` with plan, todo, log,
   decisions (ADRs), spec, research, datasets; `PLAN.md` removed, `README.md` shortened. No code changes.
+- AWS setup started by the user, guided step by step ([aws-setup.md](aws-setup.md)): GPU quota
+  approved (8 vCPU, Frankfurt), launch fails with "Insufficient capacity" for g6/g5 in all three
+  zones. Reliability for the client (stop/start may fail) left open.
