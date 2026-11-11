@@ -5,6 +5,7 @@ POST /labels, which writes labels.json. Standard library only.
 """
 import json
 import logging
+import threading
 import webbrowser
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -14,6 +15,7 @@ from culling.labels import load_labels, normalise_labels, save_labels
 log = logging.getLogger(__name__)
 
 MAX_BODY = 20 * 1024 * 1024
+SAVE_LOCK = threading.Lock()   # ThreadingHTTPServer: one labels.json write at a time
 
 
 class LabelHandler(SimpleHTTPRequestHandler):
@@ -55,7 +57,8 @@ class LabelHandler(SimpleHTTPRequestHandler):
         except (ValueError, UnicodeDecodeError) as exc:
             self._json(400, {"error": str(exc)})
             return
-        save_labels(self.out_dir, labels)
+        with SAVE_LOCK:
+            save_labels(self.out_dir, labels)
         log.info("labels.json: %d labels saved", len(labels))
         self._json(200, {"saved": len(labels)})
 

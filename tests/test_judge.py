@@ -539,6 +539,15 @@ def test_verdicts_of_another_model_are_not_mixed(tmp_path):
         J.run_judge(tmp_path, config, client_factory=lambda cfg: FakeClient([GOOD], model="other-model"))
 
 
+
+def test_verdicts_of_another_prompt_are_not_mixed(tmp_path, monkeypatch):
+    s, ids, config = _three_pairs(tmp_path)
+    J.run_judge(tmp_path, config, client_factory=lambda cfg: FakeClient([GOOD, GOOD, GOOD]))
+    assert json.loads((tmp_path / "judge_verdicts.json").read_text("utf-8"))["prompt_hash"] == J.prompt_hash()
+    monkeypatch.setattr(J, "PROMPT", J.PROMPT + " Changed.")
+    with pytest.raises(SystemExit, match="another prompt"):
+        J.run_judge(tmp_path, config, client_factory=lambda cfg: FakeClient([GOOD]))
+
 # ------------------------------------------------------------------- labels
 
 def test_compare_with_labels_counts_and_text():

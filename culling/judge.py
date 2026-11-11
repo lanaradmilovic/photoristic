@@ -23,6 +23,7 @@ step measures the model.
 Privacy: the pair images leave the machine only towards `vlm.base_url` (the user's
 own server). Nothing of the images or the prompt is logged.
 """
+import hashlib
 import json
 import logging
 import math
@@ -530,6 +531,12 @@ def judge_pair(client, pair, jpeg, max_retries):
             "prompt_tokens": usage.get("prompt_tokens"), "judged_at": _now()}
 
 
+def prompt_hash():
+    """Short hash of PROMPT and VERDICT_SCHEMA: verdicts of another prompt must not be resumed."""
+    text = PROMPT + json.dumps(VERDICT_SCHEMA, sort_keys=True)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
+
+
 def load_verdicts(out_dir):
     path = Path(out_dir) / VERDICTS_FILE
     if not path.exists():
@@ -552,11 +559,15 @@ def run_judging(out_dir, pairs, client, vlm_cfg, sim_low=None, sim_high=None):
     out_dir = Path(out_dir)
     client.ping()
     data = load_verdicts(out_dir) or {"created": _now(), "updated": None, "model": client.model,
+                                      "prompt_hash": prompt_hash(),
                                       "base_url": client.base_url, "sim_low": sim_low, "sim_high": sim_high,
                                       "verdicts": {}, "labels": None}
     if data.get("model") != client.model:
         sys.exit(f"{out_dir / VERDICTS_FILE} holds verdicts of {data.get('model')}; move or delete it "
                  f"before judging with {client.model}.")
+    if data.get("prompt_hash") != prompt_hash():
+        sys.exit(f"{out_dir / VERDICTS_FILE} holds verdicts of another prompt (hash {data.get('prompt_hash')}, "
+                 f"now {prompt_hash()}); move or delete it before judging, so the two are not mixed.")
     data["base_url"] = client.base_url
     if sim_low is not None:
         data["sim_low"], data["sim_high"] = sim_low, sim_high

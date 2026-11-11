@@ -17,6 +17,7 @@ import logging
 import sys
 import time
 from pathlib import Path
+from urllib.parse import urlparse
 
 from culling.config import load_config
 
@@ -165,9 +166,10 @@ def cmd_score(args, config):
 
 
 def _vlm_help(vlm, error):
+    port = urlparse(vlm["base_url"]).port or 8000
     return (f"VLM: {error}\n"
             f"The server at {vlm['base_url']} does not answer or does not serve {vlm['model']}. Start the vLLM "
-            f"server or the SSH tunnel (ssh -L 8000:localhost:8000 <host>) and set {vlm['api_key_env']} if the "
+            f"server or the SSH tunnel (ssh -L {port}:localhost:8000 <host>) and set {vlm['api_key_env']} if the "
             f"server needs a key; `python cull.py ping-vlm` checks the connection.")
 
 
