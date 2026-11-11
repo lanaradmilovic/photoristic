@@ -42,3 +42,13 @@ link them here instead of copying.
 - AWS setup started by the user, guided step by step ([aws-setup.md](aws-setup.md)): GPU quota
   approved (8 vCPU, Frankfurt), launch fails with "Insufficient capacity" for g6/g5 in all three
   zones. Reliability for the client (stop/start may fail) left open.
+- Later the same day: `g4dn.xlarge` (T4) runs 4-bit Qwen3.5-9B via the tunnel on port 8001 (0e84459).
+
+## Session 6 — 2026-11-11
+- First real VLM judge run on 4a, two prompts ([research](research/2026-11-11-judge-first-real-run.md)):
+  v1 48/56, v2 26/56, pipeline 52–53/56. v2 rejected (kept in the research note), code stays on v1.
+- Judge parked, the VLM moves to phase 3 scoring ([0020](decisions/0020-vlm-judge-parked.md),
+  supersedes [0016](decisions/0016-vlm-judge-grey-zone-only.md)).
+- Partial overlap of face identities as a split: implemented behind `faces_partial_overlap_blocks`,
+  measured on 4a + Talici 1 labels (false merges 9 → 6, missed 45 → 77), left off
+  ([research](research/2026-11-11-partial-overlap-block.md), [0021](decisions/0021-partial-overlap-does-not-split.md)). 119 tests.

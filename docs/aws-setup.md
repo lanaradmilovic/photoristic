@@ -21,7 +21,8 @@ jasno i kratko. Ažuriraj "Dokle se stiglo" na kraju svake sesije u kojoj se rad
   (CUDA graphs za 256 zahteva ne staju u 15 GB). Model zauzima 8 GB, KV cache 2.7 GB ≈ 63k tokena.
   Claude može sam da se poveže (`ssh -i ~/.ssh/photoristic.pem ubuntu@<IP>`) i pokrene sve; od
   korisnika treba samo Start mašine i IP.
-- Sledeće: prva prava `judge` proba na 4a i poređenje sa labelama.
+- Urađeno 2026-11-11: prva prava `judge` proba na 4a (~5,5 s po paru; rezultat u
+  [research](research/2026-11-11-judge-first-real-run.md)). Sledeće: faza 3 (ocenjivanje grupa).
 - Za kasnije (g6 za pun model): pokušati Frankfurt ponovo u drugo doba dana i/ili tražiti istu dozvolu (8) u Irskoj
   `eu-west-1`, Stokholmu `eu-north-1`, Londonu `eu-west-2` (vidi [Ako nema mesta](#ako-nema-mesta)).
   Nije potvrđeno da su ti zahtevi poslati.

@@ -53,7 +53,7 @@ def _mean_similarity(vec, members, embeddings):
     return float(np.mean([_similarity(vec, embeddings[m["sha256"]]) for m in members]))
 
 
-def identity_relation(sig_a, sig_b, allow_unknown=False):
+def identity_relation(sig_a, sig_b, allow_unknown=False, partial_blocks=False):
     """Compare two photo signatures (frozenset of known identity labels, number of faces).
 
     "same": both have identified people, the same ones, and the same number of faces
@@ -61,9 +61,12 @@ def identity_relation(sig_a, sig_b, allow_unknown=False):
             the bride is identified in both). With `allow_unknown`, a face that could
             not be identified (a profile, seen too rarely to be an identity) may stand
             in for a missing known person: {A, B} vs {B} + one unknown face is "same".
-    "different": both have identified people and none in common.
-    None: no identified face on at least one side, or a partial overlap
-          ({bride, groom} vs {bride, other man}) - the usual rules apply.
+    "different": both have identified people and none in common; with
+            `partial_blocks` also a partial overlap: a known person present on one
+            side and absent on the other ({A, B, C} vs {A, B, C, D}, a person added to
+            or missing from a group photo, decision 0014).
+    None: no identified face on at least one side, or a partial overlap without
+          `partial_blocks` - the usual rules apply.
     """
     if not sig_a or not sig_b:
         return None
@@ -73,7 +76,7 @@ def identity_relation(sig_a, sig_b, allow_unknown=False):
         return None
     if n_a == n_b and (ids_a == ids_b or (allow_unknown and (ids_a <= ids_b or ids_b <= ids_a))):
         return "same"
-    if ids_a.isdisjoint(ids_b):
+    if ids_a.isdisjoint(ids_b) or (partial_blocks and ids_a != ids_b):
         return "different"
     return None
 
@@ -237,7 +240,7 @@ def _assign(photos, embeddings, cfg, people=None, identities=None):
         if identities is None:
             return None
         return identity_relation(identities.get(a["sha256"]), identities.get(b["sha256"]),
-                                 cfg["faces_same_allows_unknown"])
+                                 cfg["faces_same_allows_unknown"], cfg["faces_partial_overlap_blocks"])
 
     groups, group_of, how, marks = [], {}, {}, {}
     prev = None
@@ -306,7 +309,7 @@ def refine_boundaries(groups, how, embeddings, cfg, identities=None):
     def clearly_closer(photo, other_group, own_rest, border):
         if identities is not None and identity_relation(
                 identities.get(photo["sha256"]), identities.get(border["sha256"]),
-                cfg["faces_same_allows_unknown"]) == "different":
+                cfg["faces_same_allows_unknown"], cfg["faces_partial_overlap_blocks"]) == "different":
             return False
         vec = embeddings[photo["sha256"]]
         return _mean_similarity(vec, other_group, embeddings) > \

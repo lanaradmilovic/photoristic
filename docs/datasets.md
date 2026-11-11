@@ -12,7 +12,7 @@ is checked at least on **Talici 1 (over-splitting) and 4a (wrong merges)**, idea
 
 | Folder | Photos | Content | Output | Behaviour |
 |---|---|---|---|---|
-| 01.09.Talici 1 | 711 | couple session (boat, old town, single frames 5–40 s apart, mostly B&W) + start of party | `21-10-2026-v1` | over-splits the couple session |
+| 01.09.Talici 1 | 711 | couple session (boat, old town, single frames 5–40 s apart, mostly B&W) + start of party | `21-10-2026-v1` | over-splits the couple session; **labelled** (710 pairs) |
 | 01.09. Talici 2 | 174 | evening party + groom prep details | `21-10-2026-talici2` | good; exposure jumps break DINOv2 (cufflinks 0.61) |
 | Talici 3 | 661 | groom, bride prep, family formals, couple at car/pier, church (burst style, median gap 3.9 s) | `21-10-2026-talici3` | good |
 | talici 4 | 695 | garden party, speeches, first dance, cake, dancing | `21-10-2026-talici4` | candids mostly legit singles; dancing couple split 3–4 ways |

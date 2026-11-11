@@ -67,6 +67,10 @@ DEFAULTS = {
         # "same people" ({A,B} vs {B}+1 unknown). Off: an unknown face could be the
         # next guest in a congratulation line.
         "faces_same_allows_unknown": False,
+        # A known person present in one photo and absent in the other (partial overlap of
+        # identities, {A,B,C} vs {A,B,C,D}) counts as different people and blocks the join
+        # like disjoint identities do; bursts within time_gap_seconds still join (decision 0014).
+        "faces_partial_overlap_blocks": False,
         "max_group_span_seconds": 180,
         "refine_boundaries": True,
         "refine_margin": 0.02,

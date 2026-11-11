@@ -64,6 +64,9 @@ SHEET_MAX_HEIGHT = 16000  # px; JPEG viewers and the PIL encoder dislike taller 
 # group, even with a wider or tighter framing or a new pose; another guest (a hug in
 # the congratulation line), a person added to or missing from a group photo, or
 # another activity is another group.
+# A stricter v2 (describe each photo's action first, "doubt -> different") was tried on
+# 2026-11-11 and was much worse (26 of 56 labelled pairs vs 48 for this one): it split on
+# background people. Text and analysis: docs/research/2026-11-11-judge-first-real-run.md.
 PROMPT = """These are two wedding photos by the same photographer, labelled 1 (left) and 2 (right), \
 taken {gap} seconds apart.
 
@@ -170,6 +173,7 @@ def select_pairs(photos, embeddings, groups_data, judge_cfg, grouping_cfg, peopl
     sim_low, sim_high = float(judge_cfg["sim_low"]), float(judge_cfg["sim_high"])
     lookback = float(grouping_cfg["lookback_seconds"])
     allow_unknown = bool(grouping_cfg.get("faces_same_allows_unknown", False))
+    partial_blocks = bool(grouping_cfg.get("faces_partial_overlap_blocks", False))
     gid = group_of(groups_data)
     how_joined = {}  # photo id -> "neighbour" / "lookback" / "moved" from groups.json (first photos absent)
     for g in groups_data["groups"]:
@@ -189,7 +193,8 @@ def select_pairs(photos, embeddings, groups_data, judge_cfg, grouping_cfg, peopl
     def relation(a, b):
         if not signatures:
             return None
-        return identity_relation(signatures.get(a["sha256"]), signatures.get(b["sha256"]), allow_unknown)
+        return identity_relation(signatures.get(a["sha256"]), signatures.get(b["sha256"]), allow_unknown,
+                                 partial_blocks)
 
     def nobody(p):
         return people.get(p["sha256"], True) is False

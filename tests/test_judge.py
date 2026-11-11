@@ -280,6 +280,9 @@ def test_faces_decided_pairs_are_excluded_unless_asked():
     pairs, stats = s.select(groups, include_faces_decided=True)
     assert [(p["a_id"], p["faces_relation"]) for p in pairs] == [(p0, "same"), (p1, "different"), (p2, None)]
     assert stats["excluded_faces_same"] == 0 and stats["excluded_faces_different"] == 0
+    # With faces_partial_overlap_blocks a partial overlap ({C} vs {C, D}) is "different" too.
+    pairs, stats = s.select(groups, grouping={"faces_partial_overlap_blocks": True})
+    assert pairs == [] and stats["excluded_faces_different"] == 2
 
 
 def test_no_people_on_both_sides_is_excluded():

@@ -1,8 +1,9 @@
 # VLM judge (step 2c)
 
-Status: implemented, dry-run only; no real VLM call made yet (`culling/vlm.py`,
-`culling/judge.py`). Decision: [0016](../decisions/0016-vlm-judge-grey-zone-only.md).
-Dry-run numbers: [research](../research/2026-10-23-judge-dry-run.md).
+Status: implemented (`culling/vlm.py`, `culling/judge.py`) and **parked**: the first real run on
+4a did not beat the pipeline, so grouping does not use it ([0020](../decisions/0020-vlm-judge-parked.md)).
+It stays as a measuring tool for a stronger model. Real run: [research](../research/2026-11-11-judge-first-real-run.md);
+dry-run numbers: [research](../research/2026-10-23-judge-dry-run.md).
 
 DINOv2 similarity between **0.80 and 0.90** is a grey zone: it holds "the same couple in a new
 pose" (one group) as well as "another guest at the same spot" (must stay apart). Face identities

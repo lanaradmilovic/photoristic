@@ -1,6 +1,6 @@
 # 0016 — VLM judge only for the 0.80–0.90 grey zone, measured before it is used
 
-- Status: accepted
+- Status: superseded by [0020](0020-vlm-judge-parked.md)
 - Date: 2026-10-21 (implemented 2026-10-23)
 - Decided by: the user
 

@@ -5,28 +5,18 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
 
 ## Now
 
-- **Grouping: a person added to or missing from a group photo must split the group.** Rule:
-  [0014](decisions/0014-group-definition-v2.md). Today `identity_relation` (`culling/grouping.py`)
-  returns None for a partial overlap ({A,B,C} vs {A,B,C,D}), so DINOv2 decides and such pairs merge
-  (also Talici 1: a group of 3 men joined with a group of 4). Proposed: a known identity present on
-  one side and absent on the other blocks the join. Risk: a turned head hides a face while the
-  person is still there — measure with `cull.py score` on 4a before and after, and look at Talici 1
-  party groups. The VLM prompt already carries the rule.
-- **AWS: bring up the vLLM server (user).** Stuck at step 5 (no GPU capacity in Frankfurt).
-  Status and the step-by-step guide: [aws-setup.md](aws-setup.md). When the user wants to continue,
-  read "Dokle se stiglo" there and list the remaining steps in Serbian, simple and short.
-- **VLM judge: first real run (user).** Needs the user's choice of model and server or API key.
-  Steps: [spec/vlm-judge.md](spec/vlm-judge.md#running). Before paying for ~690 calls consider:
-  dedupe look-back per pair of groups, skip joined bursts, `sim_low` 0.79
-  ([research](research/2026-10-23-judge-dry-run.md#redundancy-visual-inspection-of-the-pair-sheets)).
+- **Phase 3: VLM scoring (pick the best photo per group).** Next big step
+  ([design](spec/vlm-scoring.md), [0020](decisions/0020-vlm-judge-parked.md)). The server runs on a
+  T4 with the 4-bit model ([aws-setup.md](aws-setup.md)); check how many images per request fit
+  there. Do not rely on the model to flag a mixed group: the judge run showed it misses changes of
+  action ([research](research/2026-11-11-judge-first-real-run.md)), and groups may still mix two
+  group photos that differ by one person ([0021](decisions/0021-partial-overlap-does-not-split.md)).
 - **Merge branches (user).** `labels`, `segments`, `judge` and `docs` are not in `main`; waiting
   for the user's review.
 
 ## Next
 
-- **Labels for Talici 1 (user).** Only 4a is labelled (`data/out-4a/labels.json`, 333 pairs).
-  Talici 1 is the over-splitting extreme and is needed next to 4a for every grouping change.
-- **Check 4a labels against the new group rule (user).** They were made 2026-11-10, partly under
+- **Check 4a and Talici 1 labels against the new group rule (user).** They were made 2026-11-10, partly under
   the old "wide vs tight = separate" rule ([0013](decisions/0013-group-definition-v1.md)).
 - **Day segments: 4 missed cuts.** At 300 s four real part-of-day changes are not cut; pauses cannot
   separate them ([0017](decisions/0017-segments-gap-300s.md)). Needs content (VLM segment
@@ -36,6 +26,9 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
 
 - **Labelling tool: look-back joins.** Only adjacent pairs can be labelled; "photo 5 belongs with
   photo 2" cannot be recorded. Add such a label if the user sees it often.
+- **VLM judge again with a stronger model.** Parked ([0020](decisions/0020-vlm-judge-parked.md)).
+  When the full Qwen3.5-9B (g6) or a larger model runs, re-run `cull.py judge` on 4a (~10 min) and
+  try a v3 prompt that limits "person added/missing" to posed group photos.
 - **Garbage face identities.** A size filter was rejected ([0012](decisions/0012-no-face-size-filter.md));
   another feature (blur, position, co-occurrence) might work.
 - Phase 1 checks on a two-camera wedding ([plan](plan.md#phase-1--ingest)).

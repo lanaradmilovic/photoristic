@@ -40,7 +40,7 @@ how things work today is in [spec/](spec/); why, in [decisions/](decisions/).
 |---|---|---|
 | 0 | Project setup, docs, config | done |
 | 1 | Ingest: previews + metadata | done; needs a two-camera wedding |
-| 2 | Grouping + HTML report (+ faces, labels, judge dry-run, segments) | done; tuning with labels; judge not yet run |
+| 2 | Grouping + HTML report (+ faces, labels, judge, segments) | done; tuning with labels; judge parked ([0020](decisions/0020-vlm-judge-parked.md)) |
 | 3 | VLM scoring per group | next ([design](spec/vlm-scoring.md)) |
 | 4 | Export: JSON/CSV + XMP for Lightroom | planned |
 | 5 | Evaluation against past agency selections | planned |
@@ -60,11 +60,11 @@ Done ([spec](spec/ingest.md)). Still to check:
 Done ([spec](spec/grouping.md)). Acceptance:
 - [x] Invariant: every photo in exactly one group.
 - [x] Ground truth exists for 4a ([labels](spec/labels.md)).
-- [ ] Ground truth for Talici 1; scores recorded for every grouping change.
-- [ ] The VLM judge measured against labels before it influences grouping ([0016](decisions/0016-vlm-judge-grey-zone-only.md)).
+- [x] Ground truth for Talici 1 (710 pairs, labelled 2026-11-10); scores recorded for every grouping change.
+- [x] The VLM judge measured against labels: worse than the pipeline, kept out of grouping ([0020](decisions/0020-vlm-judge-parked.md)).
 
 Direction (2026-10-21): per-segment grouping profiles (segments at > 5 min pauses), face identities,
-and the VLM judge only in the 0.80–0.90 band.
+and the VLM judge only in the 0.80–0.90 band (parked 2026-11-11, [0020](decisions/0020-vlm-judge-parked.md)).
 
 ### Phase 3 — VLM scoring
 

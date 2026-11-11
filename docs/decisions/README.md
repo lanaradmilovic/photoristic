@@ -27,7 +27,9 @@ Rules:
 | [0013](0013-group-definition-v1.md) | Group = interchangeable frames, wide vs tight separate | superseded by 0014 | 2026-10-19 |
 | [0014](0014-group-definition-v2.md) | Group = same main people, same moment, same place | accepted | 2026-11-11 |
 | [0015](0015-labels-per-adjacent-boundary.md) | Labels on adjacent-photo boundaries, keyed by sha256 | accepted | 2026-10-22 |
-| [0016](0016-vlm-judge-grey-zone-only.md) | VLM judge only for the 0.80–0.90 grey zone | accepted | 2026-10-23 |
+| [0016](0016-vlm-judge-grey-zone-only.md) | VLM judge only for the 0.80–0.90 grey zone | superseded by 0020 | 2026-10-23 |
 | [0017](0017-segments-gap-300s.md) | Day segments at pauses > 300 s | accepted | 2026-11-11 |
 | [0018](0018-swappable-vlm-client-own-server.md) | Own vLLM server, swappable client, no framework | accepted | 2026-10-16 |
 | [0019](0019-safety-rules-in-code.md) | Safety rules in code, never left to the model | accepted | 2026-10-19 |
+| [0020](0020-vlm-judge-parked.md) | VLM judge out of grouping for now; VLM to scoring | accepted | 2026-11-11 |
+| [0021](0021-partial-overlap-does-not-split.md) | Partial overlap of face identities splits a group | **rejected** | 2026-11-11 |

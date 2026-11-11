@@ -94,9 +94,11 @@ compared (neighbour, look-back, boundary refinement):
   in one frame is not a change of people.
 - `faces_same_allows_unknown: true` lets an unknown face stand in for a missing known person
   (off, [0011](../decisions/0011-unknown-face-does-not-stand-in.md)).
-- anything else (no identified face on one side, partial overlap): the usual rules.
-  Known gap: a partial overlap ({A,B,C} vs {A,B,C,D}) does not block a join today, which
-  contradicts the group rule; see [todo](../todo.md).
+- anything else (no identified face on one side, partial overlap): the usual rules. A partial
+  overlap ({A,B,C} vs {A,B,C,D}) therefore does not block a join, although the group rule says a
+  person added or missing is another group. `faces_partial_overlap_blocks: true` would treat it as
+  *different people*; it is off because most such pairs are a face not recognised in one frame
+  ([0021](../decisions/0021-partial-overlap-does-not-split.md)).
 
 The report shows faces and identities under each photo (`👤2 A,B`) and the badges *joined: same
 people* / *kept apart: different people*. `cull.py faces --output … --sheets` writes one contact

@@ -105,6 +105,12 @@ grouping:
   # couple. Merges more of a couple session (Talici 1: 8028 -> 8029, the bride in
   # profile) but an unknown face may also be the NEXT guest in a congratulation line.
   faces_same_allows_unknown: false
+  # A known person present in one photo and missing in the other ({A,B,C} vs {A,B,C,D}:
+  # a person added to or missing from a group photo) counts as different people, like
+  # no identity in common: only a burst (time_gap_seconds) may still join (rule 0014).
+  # Off: measured 2026-11-11 it fixes 3+3 pairs and breaks 15+20 on 4a + Talici 1 labels,
+  # mostly the bride or groom not recognised in one frame (head turned), not a real change.
+  faces_partial_overlap_blocks: false
   # After grouping, a photo at the border of two groups moves to the other group if
   # its average similarity there is higher by more than refine_margin.
   refine_boundaries: true
