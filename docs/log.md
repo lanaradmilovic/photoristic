@@ -52,3 +52,9 @@ link them here instead of copying.
 - Partial overlap of face identities as a split: implemented behind `faces_partial_overlap_blocks`,
   measured on 4a + Talici 1 labels (false merges 9 → 6, missed 45 → 77), left off
   ([research](research/2026-11-11-partial-overlap-block.md), [0021](decisions/0021-partial-overlap-does-not-split.md)). 119 tests.
+
+- **2026-11-11 — review and merge.** Code review of `grouping-partial-overlap` and `segments`; fixed
+  the label-save race, Esc in the lightbox, judge resume across prompts (prompt hash), tunnel hint
+  port, duplicate segment bars, stale `segments.json` / sheets, segment order past S99, and a
+  segments failure no longer stops the report. All branches are in `main`; segments spec:
+  [spec/segments.md](spec/segments.md). Smaller findings: [todo.md](todo.md).

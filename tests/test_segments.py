@@ -217,5 +217,39 @@ def test_report_shows_segment_bars_only_with_segments(tmp_path):
     assert 'class="seghead"' not in html
     html = write_report(tmp_path, p, groups, None, None, None, segments_data=data).read_text(encoding="utf-8")
     assert html.count('class="seghead"') == 2
-    assert 'href="segments_sheets/S01.jpg"' in html and ">S02<" in html
+    assert 'segments_sheets/' not in html and ">S02<" in html   # no sheet on disk -> no link
+    (tmp_path / SHEETS_DIR).mkdir()
+    (tmp_path / SHEETS_DIR / "S01.jpg").write_bytes(b"x")
+    html = write_report(tmp_path, p, groups, None, None, None, segments_data=data).read_text(encoding="utf-8")
+    assert 'href="segments_sheets/S01.jpg"' in html and 'href="segments_sheets/S02.jpg"' not in html
     assert html.index('>S01<') < html.index('>g0001<') < html.index('>S02<') < html.index('>g0002<')
+
+
+def test_report_shows_each_segment_bar_once(tmp_path):
+    # a single-photo leftover group of S01 comes after S02's groups (as group_photos orders them)
+    p = [photo(0, 0), photo(1, 1), photo(2, 900), photo(3, 2)]
+    groups = groups_of([p[0]["id"], p[1]["id"]], [p[2]["id"]], [p[3]["id"]])
+    data = build_segments(p, {**CFG, "gap_seconds": 300}, groups_data=groups)
+    html = write_report(tmp_path, p, groups, None, None, None, segments_data=data).read_text(encoding="utf-8")
+    assert html.count('class="seghead"') == 2 and html.count(">S01<") == 1
+
+
+def test_crossing_group_home_is_the_earliest_segment_not_the_smallest_string():
+    segs = [{"segment_id": f"S{k:02d}" if k < 100 else f"S{k}", "photo_ids": [f"p{k}"], "stats": {}}
+            for k in range(1, 102)]
+    # first photo unknown to every segment, the others in S11 and S100
+    crossing = attach_groups(segs, groups_of(["x", "p11", "p100"]))
+    assert crossing == ["g0001"] and segs[10]["group_ids"] == ["g0001"] and segs[99]["group_ids"] == []
+
+
+def test_new_segments_remove_sheets_of_old_segments(tmp_path):
+    p = [photo(0, 0), photo(1, 1), photo(2, 900)]
+    (tmp_path / "photos.json").write_text(json.dumps({"created": "x", "input_dir": None, "photos": p}),
+                                          encoding="utf-8")
+    run_segments(tmp_path, {"segments": dict(CFG)})
+    (tmp_path / SHEETS_DIR).mkdir()
+    (tmp_path / SHEETS_DIR / "S01.jpg").write_bytes(b"x")
+    run_segments(tmp_path, {"segments": dict(CFG)})               # same segments: sheet kept
+    assert (tmp_path / SHEETS_DIR / "S01.jpg").exists()
+    run_segments(tmp_path, {"segments": {**CFG, "gap_seconds": 2000}})   # other segments: sheet removed
+    assert not (tmp_path / SHEETS_DIR / "S01.jpg").exists()

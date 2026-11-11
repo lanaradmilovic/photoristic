@@ -95,7 +95,11 @@ def cmd_group(args, config, photos=None):
     sizes = [g["size"] for g in groups]
     log.info("Grouping done: %d photos -> %d groups (%d single, largest %d)",
              len(photos), len(groups), sizes.count(1), max(sizes, default=0))
-    cmd_segments(args, config, photos)
+    try:
+        cmd_segments(args, config, photos)
+    except Exception:   # segments are a diagnostic add-on: never lose the report because of them
+        log.exception("Segments failed; the report is written without them")
+        (Path(args.output) / "segments.json").unlink(missing_ok=True)
     cmd_report(args, config, photos, identities)
 
 
@@ -132,7 +136,7 @@ def cmd_report(args, config, photos=None, identities=None):
     label_data = {"boundaries": boundaries(photos, groups_data, embeddings),
                   "labels": load_labels(args.output)}
     path = write_report(args.output, photos, groups_data, input_dir, identities, label_data,
-                        segments_data=load_segments(args.output))
+                        segments_data=load_segments(args.output) if config["segments"]["enabled"] else None)
     log.info("Report: %s", path.resolve())
 
 

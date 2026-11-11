@@ -11,8 +11,6 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
   there. Do not rely on the model to flag a mixed group: the judge run showed it misses changes of
   action ([research](research/2026-11-11-judge-first-real-run.md)), and groups may still mix two
   group photos that differ by one person ([0021](decisions/0021-partial-overlap-does-not-split.md)).
-- **Merge branches (user).** `labels`, `segments`, `judge` and `docs` are not in `main`; waiting
-  for the user's review.
 
 ## Next
 
@@ -21,6 +19,14 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
 - **Day segments: 4 missed cuts.** At 300 s four real part-of-day changes are not cut; pauses cannot
   separate them ([0017](decisions/0017-segments-gap-300s.md)). Needs content (VLM segment
   classification), not another threshold.
+
+- **Open review findings (2026-11-11), smaller ones not fixed at merge:** label server checks no
+  Origin; failed save falls back to localStorage that server mode never reads; thresholds copied in
+  `judge.py` docstring and report JS; double VLM ping; duplicated helpers (`_write_json`, `_ratio`,
+  `_time`, `_clock`); `partial_blocks` treats an unrecognised face as a different person (measure
+  with `cull.py score` first); segments: `load_people` skips the model check, stale
+  `identities.json` used when faces are off, filters hide segment bars only by camera, burst
+  cutoff and sheet sizes not in config.
 
 ## Later / ideas
 

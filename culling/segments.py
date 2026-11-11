@@ -163,6 +163,7 @@ def attach_groups(segments, groups_data):
     longer than its own limits, so with a sensible gap this is zero. Returns the list
     of crossing group ids."""
     seg_of_photo = {pid: seg["segment_id"] for seg in segments for pid in seg["photo_ids"]}
+    order = {seg["segment_id"]: k for k, seg in enumerate(segments)}
     by_id = {seg["segment_id"]: seg for seg in segments}
     for seg in segments:
         seg["group_ids"] = []
@@ -173,7 +174,7 @@ def attach_groups(segments, groups_data):
         touched = {seg_of_photo[pid] for pid in g["photo_ids"] if pid in seg_of_photo}
         if not touched:
             continue
-        home = seg_of_photo.get(g["photo_ids"][0]) or sorted(touched)[0]
+        home = seg_of_photo.get(g["photo_ids"][0]) or min(touched, key=order.get)
         by_id[home]["group_ids"].append(g["group_id"])
         if len(touched) == 1:
             by_id[home]["stats"]["n_groups"] += 1
@@ -218,6 +219,10 @@ def save_segments(out_dir, data):
         json.dump(data, f, indent=1, ensure_ascii=False)
     os.replace(tmp, path)
     return path
+
+
+def _photo_sets(data):
+    return [(s["segment_id"], s["photo_ids"]) for s in (data or {}).get("segments", [])]
 
 
 def load_segments(out_dir):
@@ -356,7 +361,11 @@ def run_segments(out_dir, config, photos=None, sheets=False):
     identities = load_identities(out_dir)
     groups_data = load_groups(out_dir) if (out_dir / GROUPS_FILE).exists() else None
     data = build_segments(photos, cfg, people, identities, groups_data)
+    old = load_segments(out_dir)
     path = save_segments(out_dir, data)
+    if not sheets and _photo_sets(old) != _photo_sets(data):
+        for stale in (out_dir / SHEETS_DIR).glob("*.jpg"):   # sheets of other segments would mislead
+            stale.unlink()
     log.info("Segments (gap > %s s, people %s, identities %s, groups %s):\n%s",
              cfg["gap_seconds"], "yes" if people else "no", "yes" if identities else "no",
              "yes" if groups_data else "no", format_table(data))

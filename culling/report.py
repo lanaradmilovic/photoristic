@@ -476,7 +476,7 @@ def _group_html(group, photos_by_id, low_sim, identities=None):
     )
 
 
-def _segment_bar(seg):
+def _segment_bar(seg, has_sheet):
     """Header strip for a day segment (segments.json), shown before its first group."""
     st = seg.get("stats") or {}
     n_groups = st.get("n_groups")
@@ -494,7 +494,8 @@ def _segment_bar(seg):
     parts += [f'<span class="badge">{_e(f)}</span>' for f in seg.get("flags", [])]
     if st.get("n_groups_crossing"):
         parts.append(f'<span class="badge">{st["n_groups_crossing"]} groups cross the boundary</span>')
-    parts.append(f'<a href="segments_sheets/{_e(seg["segment_id"])}.jpg">sheet</a>')
+    if has_sheet:
+        parts.append(f'<a href="segments_sheets/{_e(seg["segment_id"])}.jpg">sheet</a>')
     return (f'<div class="seghead" data-camera="{_e(seg.get("camera_id") or "")}">'
             f'{"".join(parts)}</div>')
 
@@ -559,7 +560,8 @@ def write_report(out_dir, photos, groups_data, input_dir=None, identities=None, 
 
     seg_of_group = {gid: seg for seg in (segments_data or {}).get("segments", [])
                     for gid in seg.get("group_ids", [])}
-    body, last_camera, last_segment = [], None, None
+    sheets = {p.stem for p in (out_dir / "segments_sheets").glob("*.jpg")}
+    body, last_camera, shown_segments = [], None, set()
     for g in groups:
         if g["camera_id"] != last_camera:
             n_groups = sum(1 for x in groups if x["camera_id"] == g["camera_id"])
@@ -567,9 +569,9 @@ def write_report(out_dir, photos, groups_data, input_dir=None, identities=None, 
                         f'<span class="muted">· {n_groups} groups</span></h2>')
             last_camera = g["camera_id"]
         seg = seg_of_group.get(g["group_id"])
-        if seg is not None and seg["segment_id"] != last_segment:
-            body.append(_segment_bar(seg))
-            last_segment = seg["segment_id"]
+        if seg is not None and seg["segment_id"] not in shown_segments:   # once, before its first group
+            body.append(_segment_bar(seg, seg["segment_id"] in sheets))
+            shown_segments.add(seg["segment_id"])
         body.append(_group_html(g, photos_by_id, low_sim, identities))
 
     problem_rows = "".join(
