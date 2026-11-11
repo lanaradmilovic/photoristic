@@ -67,6 +67,10 @@ DEFAULTS = {
         # "same people" ({A,B} vs {B}+1 unknown). Off: an unknown face could be the
         # next guest in a congratulation line.
         "faces_same_allows_unknown": False,
+        # A known person present in one photo and absent in the other (partial overlap of
+        # identities, {A,B,C} vs {A,B,C,D}) counts as different people and blocks the join
+        # like disjoint identities do; bursts within time_gap_seconds still join (decision 0014).
+        "faces_partial_overlap_blocks": False,
         "max_group_span_seconds": 180,
         "refine_boundaries": True,
         "refine_margin": 0.02,
@@ -88,6 +92,15 @@ DEFAULTS = {
         "timeout_seconds": 120,
         "max_retries": 3,
         "image_long_edge": 1024,
+    },
+    "judge": {
+        # VLM judge for the grey zone of grouping (culling/judge.py).
+        "sim_low": 0.80,
+        "sim_high": 0.90,
+        "pair_image_long_edge": 768,
+        "include_faces_decided": False,
+        "max_pairs": 0,
+        "seconds_per_call": 4.0,
     },
 }
 

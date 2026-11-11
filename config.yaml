@@ -79,7 +79,7 @@ grouping:
   # is most similar to. A group never spans more than max_group_span_seconds through
   # look-back. Set lookback_seconds: 0 to turn it off.
   # 0.90 because DINOv2 does not tell people apart: a different guest at the same spot
-  # and pose scores ~0.85-0.88 (tuning round 3 in PLAN.md).
+  # and pose scores ~0.85-0.88 (docs/research/2026-10-19-grouping-tuning-4a.md).
   lookback_seconds: 120
   lookback_similarity_threshold: 0.90
   max_group_span_seconds: 180
@@ -105,6 +105,12 @@ grouping:
   # couple. Merges more of a couple session (Talici 1: 8028 -> 8029, the bride in
   # profile) but an unknown face may also be the NEXT guest in a congratulation line.
   faces_same_allows_unknown: false
+  # A known person present in one photo and missing in the other ({A,B,C} vs {A,B,C,D}:
+  # a person added to or missing from a group photo) counts as different people, like
+  # no identity in common: only a burst (time_gap_seconds) may still join (rule 0014).
+  # Off: measured 2026-11-11 it fixes 3+3 pairs and breaks 15+20 on 4a + Talici 1 labels,
+  # mostly the bride or groom not recognised in one frame (head turned), not a real change.
+  faces_partial_overlap_blocks: false
   # After grouping, a photo at the border of two groups moves to the other group if
   # its average similarity there is higher by more than refine_margin.
   refine_boundaries: true
@@ -119,8 +125,8 @@ grouping:
 # Not used yet (phase 3). The client is selected by `provider`.
 vlm:
   provider: openai_compatible   # later: bedrock
-  base_url: http://localhost:8000/v1
-  model: Qwen/Qwen3.5-9B
+  base_url: http://localhost:8001/v1   # SSH tunnel; port 8000 here is taken (docs/aws-setup.md)
+  model: Intel/Qwen3.5-9B-int4-AutoRound   # 4-bit build for g4dn (T4 16 GB); full model: Qwen/Qwen3.5-9B
   api_key_env: VLM_API_KEY      # env var name; vLLM accepts any value if no key is configured
   timeout_seconds: 120
   max_retries: 3
@@ -133,6 +139,18 @@ segments:
   # the input for later per-segment grouping profiles and VLM classification. Runs after
   # grouping in `prepare`; `cull.py segments --output <out> --sheets` re-runs it alone.
   enabled: true
-  gap_seconds: 300            # 5 min; checked on the talici folders with 180 / 300 / 600 (see PLAN.md)
+  gap_seconds: 300            # 5 min; checked on the talici folders with 180 / 300 / 600 (docs/research/2026-10-22-segments.md)
   min_photos: 5               # segments with fewer photos get the flag "tiny"; they are never merged
   sheet_max_thumbs: 48        # thumbnails per contact sheet in segments_sheets/, sampled evenly in time
+
+# VLM judge for the grey zone of grouping (culling/judge.py, `cull.py judge`).
+# Pairs whose DINOv2 similarity falls in the band below are sent to the VLM as one
+# side-by-side image; it answers whether the two frames are interchangeable. With
+# --dry-run only the pairs and images are written and nothing is sent.
+judge:
+  sim_low: 0.80               # DINOv2 band where neither thresholds nor faces decide reliably
+  sim_high: 0.90              # (half-open: >= low, < high; 0.90 is the people look-back threshold)
+  pair_image_long_edge: 768   # px per frame in the pair image (~384 Qwen tokens per frame)
+  include_faces_decided: false  # also send pairs where identities already said same/different
+  max_pairs: 0                # 0 = all selected pairs
+  seconds_per_call: 4.0       # for the dry-run duration estimate; replace with the measured value

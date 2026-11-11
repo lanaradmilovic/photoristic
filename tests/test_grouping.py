@@ -313,6 +313,28 @@ def test_identity_relation():
     assert identity_relation(profile, same, allow_unknown=True) == "same"
     assert identity_relation(same, (frozenset({"B"}), 1), allow_unknown=True) is None   # counts differ
     assert identity_relation(same, (frozenset({"C"}), 2), allow_unknown=True) == "different"
+    # A partial overlap blocks only when asked; the unknown stand-in still wins.
+    assert identity_relation(same, (frozenset({"A", "C"}), 2), partial_blocks=True) == "different"
+    assert identity_relation(same, (frozenset({"A", "B", "C"}), 3), partial_blocks=True) == "different"
+    assert identity_relation(same, (frozenset({"A", "B"}), 3), partial_blocks=True) is None   # unknown extra face
+    assert identity_relation(same, profile, allow_unknown=True, partial_blocks=True) == "same"
+
+
+def test_person_added_to_group_splits_unless_burst():
+    # Talici 1 party: a group of 3 men, then the same 3 plus a fourth, 10 s later at 0.85.
+    s = Shoot()
+    a = s.add(0, unit(0))
+    b = s.add(10, mix(unit(0), unit(1), 0.85))
+    ids = _identity_map(s, [(["A", "B", "C"], 3), (["A", "B", "C", "D"], 4)])
+    assert ids_per_group(group_photos(s.photos, s.embeddings, CFG, None, ids)) == [[a, b]]   # off by default
+    cfg = {**CFG, "faces_partial_overlap_blocks": True}
+    assert ids_per_group(group_photos(s.photos, s.embeddings, cfg, None, ids)) == [[a], [b]]
+    # Within a burst a face may just be hidden: still one group.
+    s = Shoot()
+    a = s.add(0, unit(0))
+    b = s.add(2, mix(unit(0), unit(1), 0.85))
+    ids = _identity_map(s, [(["A", "B", "C"], 3), (["A", "B", "C", "D"], 4)])
+    assert ids_per_group(group_photos(s.photos, s.embeddings, cfg, None, ids)) == [[a, b]]
 
 
 def test_different_people_never_break_a_burst():

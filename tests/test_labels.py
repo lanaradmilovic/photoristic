@@ -230,6 +230,21 @@ def test_server_post_rejects_invalid_body(server, tmp_path):
     assert exc.value.code == 404
 
 
+def test_server_concurrent_posts_all_succeed(server, tmp_path):
+    srv, base = server
+    p = [photo(k, k) for k in range(4)]
+    bodies = [json.dumps([label(p[k], p[k + 1], "same")]).encode() for k in range(3)] * 10
+    results = []
+    threads = [threading.Thread(target=lambda b=b: results.append(_request(base + "/labels", b)))
+               for b in bodies]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert len(results) == len(bodies) and all(r == (200, {"saved": 1}) for r in results)
+    assert len(load_labels(tmp_path)) == 1
+
+
 # ------------------------------------------------------------------ report
 
 def test_report_embeds_label_data(tmp_path):

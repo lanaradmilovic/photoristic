@@ -138,7 +138,7 @@ document.querySelectorAll('figure img').forEach(img =>
 lb.addEventListener('click', () => lb.classList.remove('open'));
 document.addEventListener('keydown', e => {
   if (!lb.classList.contains('open')) return;
-  if (e.key === 'Escape') lb.classList.remove('open');
+  if (e.key === 'Escape') { lb.classList.remove('open'); e.stopImmediatePropagation(); return; }
   const step = e.key === 'ArrowRight' ? 'nextElementSibling'
              : e.key === 'ArrowLeft' ? 'previousElementSibling' : null;
   if (!step) return;
@@ -192,7 +192,14 @@ function setStatus(text, isError) {
   const el = $('saveStatus'); el.textContent = text; el.classList.toggle('err', !!isError);
 }
 function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 300); }
+let saving = null, saveAgain = false;   // one POST at a time, so labels.json never gets an older list last
 async function save() {
+  if (saving) { saveAgain = true; return; }
+  saving = saveNow();
+  try { await saving; } finally { saving = null; }
+  if (saveAgain) { saveAgain = false; save(); }
+}
+async function saveNow() {
   const list = serialise(), body = JSON.stringify(list);
   if (serverMode) {
     try {
