@@ -39,6 +39,29 @@ column and the phase notes at the end of every session.
 | 6 | Second VLM: Claude Haiku 5.5 on Bedrock | planned |
 | 7 | Learning from photographer corrections | planned |
 
+## Open work
+
+The list a new session reads first. Remove an item when it is done; record the result in the session log.
+
+- **Grouping: a person added to or missing from a group photo must split the group.** Rule decided
+  by the user 2026-11-11 (README, "What a group is"). Today `identity_relation` (`culling/grouping.py`)
+  returns None for a partial overlap ({A,B,C} vs {A,B,C,D}), so DINOv2 similarity decides and such
+  pairs merge (also seen on Talici 1: a group of 3 men joined with a group of 4). Proposed rule: a
+  known identity present on one side and absent on the other blocks the join. Risk: a turned head
+  hides a face while the person is still there, so measure with `cull.py score` on 4a before and
+  after, and look at Talici 1 party groups. The VLM prompt already carries the rule.
+- **VLM judge: first real run.** Needs the user's choice of model and server or API key. Commands
+  and the port-8000 tunnel note are in README, "VLM judge".
+- **Merge branches.** `labels`, `segments` and `judge` are not in `master`; waiting for the user's review.
+- **Labels for Talici 1.** Only 4a is labelled (`data/out-4a/labels.json`, 333 pairs). Talici 1 is
+  the over-splitting extreme and is needed next to 4a for every grouping change.
+- **Labelling tool: look-back joins.** Only adjacent pairs can be labelled; "photo 5 belongs with
+  photo 2" cannot be recorded. Add such a label if the user sees it often.
+- **Day segments: 4 missed cuts.** At `gap_seconds: 300` four real part-of-day changes are not cut
+  (Talici 3 bride portraits | first look, groom | bride prep, car | church; Talici 4 guest candids |
+  sunset session). Pauses cannot separate them from superfluous cuts (both 189-266 s), so this needs
+  content (VLM segment classification), not another threshold.
+
 ---
 
 ### Phase 0 — Setup (done)
@@ -379,3 +402,8 @@ If startup fails for lack of memory, drop to `--max-model-len 16384`.
   - `faces_same_allows_unknown: true` (an unidentified face may stand in for a missing known person) merges 8026–8030 (Talici 1 → 213 groups) but on 4a (→ 145 groups) also joins the couple walking in (0041, two unknown guests) with the altar sequence and the vows close-ups (0095–0097) with 0074/0075. Left off by default; the user decides.
   - Known structural limit: when the guest's face is hidden in both frames of two different hugs, faces see `{bride}` vs `{bride}` and cannot tell the hugs apart (9857/9859 happened to be the same guest). The VLM step's "different people in group" check remains the safety net.
   - 54 tests pass. Not committed: pending the user's review of `report.html` and `faces_sheets/` on both folders.
+- **Session 4 (2026-11-10/11): the user's reviews and decisions.**
+  - **Labels:** 4a labelled (333 pairs). Current grouping scores 319 correct, 4 false merges, 10 missed merges (F1 0.959).
+  - **Group rule changed:** the same main people in the same moment at the same place are one group even with a wider or tighter framing (replaces "wide vs tight = separate"). A person added or missing = a different group. Both are in README, "What a group is", and in the VLM prompt.
+  - **Faces:** the user rated 39 of 47 face-driven changes on Talici 2-4 good, 4 bad; faces stay on with the current settings. A face-size filter (`identity_min_face_size: 48`) cleaned the identities but was rejected: it also drops the couple's faces in wide shots and split groups the user had rated good (4a score 319 → 316).
+  - **Segments:** `gap_seconds` stays 300 (180 made 4 good and 6 superfluous cuts).

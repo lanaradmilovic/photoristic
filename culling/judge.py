@@ -59,22 +59,25 @@ SHEET_MAX_HEIGHT = 16000  # px; JPEG viewers and the PIL encoder dislike taller 
 # The prompt says nothing about the DINOv2 similarity or the pipeline's decision: the
 # judge must look at the frames, not confirm a number. The time gap is given because
 # a photographer would use it too (3 s apart is a burst, 90 s apart may be a new
-# pose). "Interchangeable" is the group semantics of this project: a group holds
-# frames of which one would be enough, so a wide and a tight framing of the same
-# scene are deliberate variants (two groups), and two hugs with different guests are
-# two moments.
+# pose). "Interchangeable" is the group semantics of this project (decided by the
+# user 2026-11-11): the same main people in the same moment at the same place are one
+# group, even with a wider or tighter framing or a new pose; another guest (a hug in
+# the congratulation line), a person added to or missing from a group photo, or
+# another activity is another group.
 PROMPT = """These are two wedding photos by the same photographer, labelled 1 (left) and 2 (right), \
 taken {gap} seconds apart.
 
 Answer with JSON:
 - same_people: "yes" if the main person or people are the same in both photos, "no" if not, \
-"unsure" if you cannot tell.
-- interchangeable: "yes" if both photos show the same moment with the same composition, so that \
-keeping one of them would be enough; "no" otherwise; "unsure" if you cannot tell. A wide and a \
-tight framing of the same scene are NOT interchangeable. Two different moments, such as hugging \
-another guest, are NOT interchangeable.
+"unsure" if you cannot tell. If a person was added to or is missing from the group, the answer \
+is "no".
+- interchangeable: "yes" if both photos show the same main people in the same moment at the same \
+place, so that the photographer would pick the best of them; a wider or tighter framing, a change \
+of pose or expression, or a vertical versus a horizontal frame is still "yes". "no" if the main \
+people differ (for example hugging another guest, or one person more or fewer in the group) or \
+the activity or place changed. "unsure" if you cannot tell.
 - verdict: "same_group" when the photos are interchangeable, "different_group" when they show \
-different people or a different moment or composition, otherwise "unsure".
+different people or a different moment or place, otherwise "unsure".
 - confidence: a number from 0 to 1.
 - reason: fewer than 20 words."""
 

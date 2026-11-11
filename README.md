@@ -73,6 +73,17 @@ This means:
 
 ## Grouping algorithm (step 2)
 
+**What a group is** (the rule every threshold, label and VLM answer is measured against):
+- One group = the same main people in the same moment at the same place; the photographer keeps
+  the best frame of it. A wider or tighter framing, a new pose or expression, or a vertical versus
+  a horizontal frame stays in the same group.
+- Different people = a different group: a hug with another guest in the congratulation line, and
+  also **a person added to or missing from a group photo** (bride with her parents vs. bride with
+  her parents and grandmother). Both frames are kept; a photo with one person fewer is not a
+  substitute for the full one.
+- A new activity or a new place = a different group.
+- Photos without people (decor, food, details) may group more loosely.
+
 For each camera, photos are sorted by capture time (with sub-seconds when the
 camera writes `SubSecTimeOriginal`, then by filename). Walking in order, each photo
 collects **candidate groups** and joins the one it is most similar to; with no
@@ -184,9 +195,10 @@ Excluded, each counted in the dry-run: pairs whose face identities already say *
 
 **The question.** The pair image shows photo 1 (left) and photo 2 (right), each preview scaled
 to `judge.pair_image_long_edge` (768 px). The prompt gives the time gap and asks for
-`same_people` (yes / no / unsure), `interchangeable` (yes / no / unsure: the same moment and the
-same composition, so that one frame would be enough; a wide and a tight framing are not
-interchangeable, nor are two hugs with different guests), `verdict` (`same_group` /
+`same_people` (yes / no / unsure), `interchangeable` (yes / no / unsure: the same main people in
+the same moment at the same place, so that the photographer would pick the best frame; a wider or
+tighter framing or a new pose is still the same group, a hug with another guest, a person more or
+fewer in the group, or a new activity is not), `verdict` (`same_group` /
 `different_group` / `unsure`), `confidence` (0–1) and a short `reason`. The answer is forced into
 that JSON schema (vLLM structured outputs), temperature 0, thinking off. The prompt never mentions
 the similarity or the pipeline's decision.
