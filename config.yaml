@@ -79,7 +79,7 @@ grouping:
   # is most similar to. A group never spans more than max_group_span_seconds through
   # look-back. Set lookback_seconds: 0 to turn it off.
   # 0.90 because DINOv2 does not tell people apart: a different guest at the same spot
-  # and pose scores ~0.85-0.88 (tuning round 3 in PLAN.md).
+  # and pose scores ~0.85-0.88 (docs/research/2026-10-19-grouping-tuning-4a.md).
   lookback_seconds: 120
   lookback_similarity_threshold: 0.90
   max_group_span_seconds: 180

@@ -116,7 +116,7 @@ class OpenAICompatibleClient:
             "temperature": temperature,
             "response_format": {"type": "json_schema",
                                 "json_schema": {"name": schema_name, "schema": schema, "strict": True}},
-            # vLLM + Qwen3: thinking off per request (PLAN.md, phase 3).
+            # vLLM + Qwen3: thinking off per request (docs/research/2026-10-19-vlm-context-budget.md).
             "chat_template_kwargs": {"enable_thinking": False},
         }
         started = time.time()
