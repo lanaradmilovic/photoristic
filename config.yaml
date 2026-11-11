@@ -119,8 +119,8 @@ grouping:
 # Not used yet (phase 3). The client is selected by `provider`.
 vlm:
   provider: openai_compatible   # later: bedrock
-  base_url: http://localhost:8000/v1
-  model: Qwen/Qwen3.5-9B
+  base_url: http://localhost:8001/v1   # SSH tunnel; port 8000 here is taken (docs/aws-setup.md)
+  model: Intel/Qwen3.5-9B-int4-AutoRound   # 4-bit build for g4dn (T4 16 GB); full model: Qwen/Qwen3.5-9B
   api_key_env: VLM_API_KEY      # env var name; vLLM accepts any value if no key is configured
   timeout_seconds: 120
   max_retries: 3

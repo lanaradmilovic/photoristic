@@ -12,7 +12,17 @@ jasno i kratko. Ažuriraj "Dokle se stiglo" na kraju svake sesije u kojoj se rad
   pokretanja automatski je napravljena security group `launch-wizard-1` (SSH samo sa "My IP").
 - **Zapelo na koraku 5:** "Insufficient capacity" u Frankfurtu za `g6.xlarge`, `g6.2xlarge` i
   `g5.xlarge`, u sve tri zone (1a, 1b, 1c). Nijedna mašina nije pokrenuta, ništa se ne naplaćuje.
-- Sledeće: pokušati Frankfurt ponovo u drugo doba dana i/ili tražiti istu dozvolu (8) u Irskoj
+- **Isti dan, kasnije: `g4dn.xlarge` (T4, 16 GB) se pokrenula.** Plan: 4-bitni
+  `Intel/Qwen3.5-9B-int4-AutoRound` sa `--dtype float16` (T4 nema bfloat16); rezerva
+  `Qwen/Qwen3.5-4B`. `config.yaml` već pokazuje na taj model i port 8001.
+- **Radi (2026-11-11 20:22):** `ping-vlm` kroz tunel uspešan. Na mašini (IP se menja pri svakom
+  Start) postoji `~/start-vllm.sh`; pokreće se sa `tmux new -d -s vlm ~/start-vllm.sh`, log u
+  `~/vllm.log`, start traje ~8 min. Bez `--enforce-eager` i `--max-num-seqs 4` pada sa OOM
+  (CUDA graphs za 256 zahteva ne staju u 15 GB). Model zauzima 8 GB, KV cache 2.7 GB ≈ 63k tokena.
+  Claude može sam da se poveže (`ssh -i ~/.ssh/photoristic.pem ubuntu@<IP>`) i pokrene sve; od
+  korisnika treba samo Start mašine i IP.
+- Sledeće: prva prava `judge` proba na 4a i poređenje sa labelama.
+- Za kasnije (g6 za pun model): pokušati Frankfurt ponovo u drugo doba dana i/ili tražiti istu dozvolu (8) u Irskoj
   `eu-west-1`, Stokholmu `eu-north-1`, Londonu `eu-west-2` (vidi [Ako nema mesta](#ako-nema-mesta)).
   Nije potvrđeno da su ti zahtevi poslati.
 - Otvoreno pitanje za kasnije (za klijenta): vidi [Pouzdanost za klijenta](#pouzdanost-za-klijenta).
