@@ -23,6 +23,27 @@ jasno i kratko. Ažuriraj "Dokle se stiglo" na kraju svake sesije u kojoj se rad
   korisnika treba samo Start mašine i IP.
 - Urađeno 2026-11-11: prva prava `judge` proba na 4a (~5,5 s po paru; rezultat u
   [research](research/2026-11-11-judge-first-real-run.md)). Sledeće: faza 3 (ocenjivanje grupa).
+- Urađeno 2026-11-12: prva prava `rank` proba na 4a (faza 3). U `~/start-vllm.sh` je
+  `--limit-mm-per-prompt` podignut sa 2 na 8 slika (stara skripta: `~/start-vllm.sh.bak-image2`),
+  `--max-model-len` je 8192; start je trajao ~3 min. Rezultat u
+  [research](research/2026-11-12-ranking-first-real-run.md).
+- **2026-11-13: `g6.xlarge` (L4 24 GB) radi, pun `Qwen/Qwen3.5-9B`.** Na novom AMI-ju je samo
+  Python 3.14, pa je vLLM (0.33) instaliran sa `uv` u Python 3.12 venv (`~/install-vllm.sh`).
+  U `~/start-vllm.sh` su potrebna tri reda pre `vllm serve`, inače start pada:
+  `export CUDA_HOME=/opt/pytorch/cuda`, `export PATH=/opt/pytorch/cuda/bin:$PATH` (FlashInfer
+  traži `nvcc`) i `export VLLM_USE_FLASHINFER_SAMPLER=0` (njegov sampling kernel ne može da se
+  prevede, greška linkera). Ostalo: `--max-model-len 16384 --max-num-seqs 4
+  --limit-mm-per-prompt '{"image": 8, "video": 0}'`, bez `--enforce-eager`. Model 17,6 GB;
+  prvo skidanje + start ~10 min, kasniji start ~5 min.
+- **2026-11-14: na istoj `g6.xlarge` proban `RedHatAI/Qwen3.8-27B-INT4`** (4-bitni, 19,5 GB; pun
+  27B ne staje u 24 GB). Skripta `~/start-vllm-27b.sh` (log `~/vllm-27b.log`, tmux `vlm27`); 9B
+  skripta `~/start-vllm.sh` nije menjana. Dve stvari bez kojih start pada: `sudo sysctl -w
+  vm.overcommit_memory=1` (mašina ima 16 GB RAM-a, fajl je 18,6 GB; postavka se gubi pri svakom
+  Stop/Start, pa je treba ponoviti) i `export LIBRARY_PATH=$HOME/cuda-link:$LIBRARY_PATH` u
+  skripti (`~/cuda-link/libcudart.so` je link na biblioteku iz venv-a; FlashInfer kompajlira
+  kernel za FP8 KV cache). `--max-model-len 8192 --max-num-seqs 2 --gpu-memory-utilization 0.97`,
+  KV cache 25k tokena, start ~5 min. Rezultat u
+  [research](research/2026-11-14-qwen38-27b-int4.md). `config.yaml` i dalje pokazuje na 9B.
 - Za kasnije (g6 za pun model): pokušati Frankfurt ponovo u drugo doba dana i/ili tražiti istu dozvolu (8) u Irskoj
   `eu-west-1`, Stokholmu `eu-north-1`, Londonu `eu-west-2` (vidi [Ako nema mesta](#ako-nema-mesta)).
   Nije potvrđeno da su ti zahtevi poslati.

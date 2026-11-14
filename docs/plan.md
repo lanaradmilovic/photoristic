@@ -41,7 +41,7 @@ how things work today is in [spec/](spec/); why, in [decisions/](decisions/).
 | 0 | Project setup, docs, config | done |
 | 1 | Ingest: previews + metadata | done; needs a two-camera wedding |
 | 2 | Grouping + HTML report (+ faces, labels, judge, segments) | done; tuning with labels; judge parked ([0020](decisions/0020-vlm-judge-parked.md)) |
-| 3 | VLM scoring per group | next ([design](spec/vlm-scoring.md)) |
+| 3 | Ranking: best photo(s) per group | code done and run once; the model's order is position-biased, request design to change ([spec](spec/vlm-scoring.md), [0022](decisions/0022-variants-in-code-model-ranks.md)) |
 | 4 | Export: JSON/CSV + XMP for Lightroom | planned |
 | 5 | Evaluation against past agency selections | planned |
 | 6 | Second VLM: Claude Haiku 5.5 on Bedrock | planned |
@@ -66,10 +66,14 @@ Done ([spec](spec/grouping.md)). Acceptance:
 Direction (2026-10-21): per-segment grouping profiles (segments at > 5 min pauses), face identities,
 and the VLM judge only in the 0.80–0.90 band (parked 2026-11-11, [0020](decisions/0020-vlm-judge-parked.md)).
 
-### Phase 3 — VLM scoring
+### Phase 3 — Ranking
 
-Design in [spec/vlm-scoring.md](spec/vlm-scoring.md). Acceptance: a full wedding scored across
-several EC2 sessions with no duplicate work; every photo gets a decision; score files validate.
+How it works: [spec/vlm-scoring.md](spec/vlm-scoring.md). Acceptance:
+- [x] Every photo gets a decision; nothing is rejected; resume without duplicate work (tests).
+- [x] A real run on 4a: several images per request work on the T4, ~9 s per pair ([research](research/2026-11-12-ranking-first-real-run.md)).
+- [ ] The winner does not depend on the order of the photos (reversed-order check: 15 of 53 today).
+- [ ] Ground truth for "best photo" on 4a and the variant settings tuned against it.
+- [ ] A full wedding ranked across several EC2 sessions.
 
 ### Phase 4 — Export
 

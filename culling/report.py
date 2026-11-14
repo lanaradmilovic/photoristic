@@ -52,6 +52,10 @@ figcaption { font-size:11px; color:var(--muted); overflow:hidden; text-overflow:
 figcaption .low { color:var(--warn); font-weight:600; }
 figcaption .back { color:var(--accent); }
 figcaption.faces { color:var(--text); }
+figcaption.rank { font-weight:600; }
+figcaption.rank.keep { color:var(--ok); } figcaption.rank.maybe { color:var(--unsure); }
+figure.keep img { outline:3px solid var(--ok); outline-offset:-3px; }
+figure.maybe img { opacity:.72; }
 #lightbox { position:fixed; inset:0; background:rgba(0,0,0,.88); display:none; z-index:10;
             align-items:center; justify-content:center; flex-direction:column; color:#eee; }
 #lightbox img { max-width:94vw; max-height:88vh; }
@@ -402,7 +406,26 @@ def _faces_caption(photo, identities):
     return f'<figcaption class="faces" title="{_e(title)}">👤{info["n_faces"]} {_e(ids)}</figcaption>'
 
 
-def _figure(photo, gap, sim, low_sim, boundary=False, returned=False, moved=False, identities=None):
+RANK_WHY = {"only_frame": "the only frame of its variant", "best_of_variant": "the model's first choice in its variant",
+            "ranked_lower": "ranked below the variant's best frame", "flagged": "flagged by ingest: always review",
+            "not_ranked": "its variant has not been ranked yet", "no_valid_answer": "the model gave no valid answer"}
+
+
+def _rank_caption(entry):
+    """'★ keep · v1' / 'maybe #2 · v1 · eyes_closed' from a ranking.json photo record."""
+    if not entry:
+        return ""
+    text = "★ keep" if entry["decision"] == "keep" else "maybe"
+    if entry["decision"] != "keep" and entry.get("rank"):
+        text += f" #{entry['rank']}"
+    text += f" · v{entry['variant']}"
+    if entry.get("issue") and entry["issue"] != "none":
+        text += f" · {entry['issue']}"
+    title = f"variant {entry['variant']} of this group; {RANK_WHY.get(entry['why'], entry['why'])}"
+    return f'<figcaption class="rank {_e(entry["decision"])}" title="{_e(title)}">{_e(text)}</figcaption>'
+
+
+def _figure(photo, gap, sim, low_sim, boundary=False, returned=False, moved=False, identities=None, rank=None):
     name = Path(photo["primary_path"]).name
     if photo["jpg_path"] and photo["nef_path"]:
         name += " +JPG"
@@ -430,15 +453,17 @@ def _figure(photo, gap, sim, low_sim, boundary=False, returned=False, moved=Fals
             f'{_e(photo["status"])}</div><figcaption>{_e(name)}</figcaption>'
             f'<figcaption>&nbsp;</figcaption></figure>'
         )
+    css = f' class="{_e(rank["decision"])}"' if rank else ""
     return (
-        f'<figure data-preview="{_e(preview)}" data-caption="{_e(caption)}">'
+        f'<figure{css} data-preview="{_e(preview)}" data-caption="{_e(caption)}">'
         f'<img loading="lazy" src="{_e(thumb)}" alt="{_e(name)}" title="{_e(caption)}">'
         f'<figcaption>{_e(name)}</figcaption>'
-        f'<figcaption>{info or "&nbsp;"}</figcaption>{_faces_caption(photo, identities)}</figure>'
+        f'<figcaption>{info or "&nbsp;"}</figcaption>{_faces_caption(photo, identities)}'
+        f'{_rank_caption(rank)}</figure>'
     )
 
 
-def _group_html(group, photos_by_id, low_sim, identities=None):
+def _group_html(group, photos_by_id, low_sim, identities=None, ranking=None):
     flags = list(group["flags"])
     if group["min_similarity"] is not None and group["min_similarity"] < low_sim:
         flags.append("low similarity")
@@ -454,24 +479,28 @@ def _group_html(group, photos_by_id, low_sim, identities=None):
     min_sim = f"min sim {group['min_similarity']:.2f}" if group["min_similarity"] is not None else ""
     badges = "".join(f'<span class="badge">{_e(f)}</span>' for f in flags)
 
+    ranking = ranking or {}
     figures = []
     for idx, pid in enumerate(group["photo_ids"]):
         photo = photos_by_id[pid]
         if idx == 0:
             figures.append(_figure(photo, group["boundary_gap_seconds"],
                                    group["boundary_similarity"], low_sim, boundary=True,
-                                   identities=identities))
+                                   identities=identities, rank=ranking.get(pid)))
         else:
             figures.append(_figure(photo, group["consecutive_gaps_seconds"][idx - 1],
                                    group["consecutive_similarities"][idx - 1], low_sim,
                                    returned=joined_by[idx - 1] == "lookback",
-                                   moved=joined_by[idx - 1] == "moved", identities=identities))
+                                   moved=joined_by[idx - 1] == "moved", identities=identities,
+                                   rank=ranking.get(pid)))
+    kept = sum(1 for pid in group["photo_ids"] if ranking.get(pid, {}).get("decision") == "keep")
+    keep_note = f'<span class="muted">keep {kept} of {group["size"]}</span>' if ranking else ""
     return (
         f'<div class="group{" flagged" if flags else ""}" data-size="{group["size"]}" '
         f'data-camera="{_e(group["camera_id"])}" data-flagged="{flagged}">'
         f'<div class="ghead"><span class="gid">{group["group_id"]}</span>'
         f'<span>{group["size"]} photo{"s" if group["size"] != 1 else ""}</span>'
-        f'<span class="muted">{span}</span><span class="muted">{min_sim}</span>{badges}</div>'
+        f'<span class="muted">{span}</span><span class="muted">{min_sim}</span>{keep_note}{badges}</div>'
         f'<div class="thumbs">{"".join(figures)}</div></div>'
     )
 
@@ -511,11 +540,13 @@ def _label_block(label_data, input_dir, low_sim):
 
 
 def write_report(out_dir, photos, groups_data, input_dir=None, identities=None, label_data=None,
-                 segments_data=None):
+                 segments_data=None, ranking=None):
     """`identities` is the content of identities.json (faces.py) or None. `label_data` is
     {boundaries: labels.boundaries(...), labels: labels.load_labels(...)} for the label mode.
     `segments_data` is the content of segments.json (segments.py) or None; with it, a
-    header strip is inserted before the first group of every day segment."""
+    header strip is inserted before the first group of every day segment. `ranking` is
+    {photo_id: decision record} from ranking.json (ranking.py) or None; with it every
+    thumbnail shows keep / maybe, its variant and the flaw the model named."""
     out_dir = Path(out_dir)
     groups = groups_data["groups"]
     cfg = groups_data["config_used"]
@@ -546,6 +577,13 @@ def write_report(out_dir, photos, groups_data, input_dir=None, identities=None, 
                       f'neither join nor separate groups). '
                       f'Badge <i>joined: same people</i> marks a group that face identity merged, '
                       f'<i>kept apart: different people</i> one that it kept from merging.')
+    rank_note = ""
+    if ranking:
+        n_keep = sum(1 for r in ranking.values() if r["decision"] == "keep")
+        stats += [("keep", n_keep), ("maybe", len(ranking) - n_keep)]
+        rank_note = (' <b style="color:var(--ok)">★ keep</b> / <b style="color:var(--unsure)">maybe #2</b>: the ranking '
+                     '(ranking.json). <i>v1, v2</i> are the variants of a group, frames similar enough to compare; '
+                     'the best frame of every variant is kept, the others are ordered behind it.')
     stats_html = "".join(f'<div class="stat"><b>{_e(v)}</b>{_e(k)}</div>' for k, v in stats)
 
     max_count = max(sizes.values()) if sizes else 1
@@ -572,7 +610,7 @@ def write_report(out_dir, photos, groups_data, input_dir=None, identities=None, 
         if seg is not None and seg["segment_id"] not in shown_segments:   # once, before its first group
             body.append(_segment_bar(seg, seg["segment_id"] in sheets))
             shown_segments.add(seg["segment_id"])
-        body.append(_group_html(g, photos_by_id, low_sim, identities))
+        body.append(_group_html(g, photos_by_id, low_sim, identities, ranking))
 
     problem_rows = "".join(
         f"<tr><td>{_e(p['primary_path'])}</td><td>{_e(p['error'] or 'no capture time in EXIF')}</td></tr>"
@@ -600,7 +638,7 @@ For the first photo of a group these refer to the previous group, i.e. why the g
 <span style="color:var(--accent)">↩</span> marks a photo that joined by look-back (the photographer returned to the scene):
 time since the group's last photo and similarity to its best-matching photo.
 <span style="color:var(--accent)">⇄</span> marks a photo moved here from the neighbouring group because it is more similar to this group.
-Similarities below {low_sim} are highlighted.{faces_note} Click a thumbnail to open the preview (←/→ to move, Esc to close).</p>
+Similarities below {low_sim} are highlighted.{faces_note}{rank_note} Click a thumbnail to open the preview (←/→ to move, Esc to close).</p>
 <div class="controls">
   <button id="labelMode" disabled title="label the boundaries between neighbouring photos">Label mode</button>
   <label class="gctl"><input type="checkbox" id="hideSingles"> hide single photos</label>

@@ -9,6 +9,9 @@
     python cull.py label   --output <output folder> [--port 8765] [--no-browser]   # label boundaries in the browser
     python cull.py score   --output <output folder> [--groups groups.json groups.nofaces.json]
     python cull.py judge   --output <output folder> [--dry-run] [--include-faces-decided] [--max-pairs N]
+    python cull.py rank    --output <output folder> [--dry-run] [--max-requests N]   # best photo per group
+    python cull.py pick    --output <output folder> [--port 8765] [--no-browser] [--review-model]   # mark the best photo(s) per group
+    python cull.py pick-score --output <output folder>  # ranking.json vs picks.json
     python cull.py ping-vlm                             # does the VLM server answer and serve the model?
 
 All commands accept --config (default: config.yaml next to this file).
@@ -122,6 +125,7 @@ def cmd_report(args, config, photos=None, identities=None):
     from culling.grouping import load_groups
     from culling.ingest import read_photos_file
     from culling.labels import boundaries, load_labels
+    from culling.ranking import ranking_for_report
     from culling.report import write_report
     from culling.segments import load_segments
 
@@ -136,7 +140,8 @@ def cmd_report(args, config, photos=None, identities=None):
     label_data = {"boundaries": boundaries(photos, groups_data, embeddings),
                   "labels": load_labels(args.output)}
     path = write_report(args.output, photos, groups_data, input_dir, identities, label_data,
-                        segments_data=load_segments(args.output) if config["segments"]["enabled"] else None)
+                        segments_data=load_segments(args.output) if config["segments"]["enabled"] else None,
+                        ranking=ranking_for_report(args.output, groups_data))
     log.info("Report: %s", path.resolve())
 
 
@@ -152,6 +157,60 @@ def cmd_label(args, config):
     _load_photos_or_exit(args)
     cmd_report(args, config)
     serve(args.output, port=args.port, open_browser=not args.no_browser)
+
+
+def cmd_pick(args, config):
+    """Write picks.html (one multi-photo group per screen) and serve it; picks.json is
+    written after every click."""
+    from culling.grouping import load_groups
+    from culling.labelserver import serve
+    from culling.picks import build_items, write_page
+
+    photos = _load_photos_or_exit(args)
+    if not (args.output / "groups.json").exists():
+        sys.exit(f"No groups.json in {args.output} - run 'group' first.")
+    if args.review_model:
+        # The model's choice on the screen: one ranked variant per screen, with its reason.
+        import json
+
+        from culling.picks import REVERSED_FILE, build_model_items
+        from culling.ranking import load_ranking
+        ranking = load_ranking(args.output)
+        if not ranking or not ranking.get("answers"):
+            sys.exit(f"No answers in {args.output / 'ranking.json'} - run 'rank' first.")
+        reversed_file = args.output / REVERSED_FILE
+        reversed_rows = json.loads(reversed_file.read_text(encoding="utf-8")) if reversed_file.exists() else None
+        items = build_model_items(photos, ranking, reversed_rows)
+        if not items:
+            sys.exit("ranking.json has no ranked variant for these photos.")
+        write_page(args.output, items, review=True)
+        log.info("picks.html: %d variants ranked by %s%s", len(items), ranking.get("model"),
+                 f", with the reversed-order check of {REVERSED_FILE}" if reversed_rows else "")
+        serve(args.output, port=args.port, open_browser=not args.no_browser, page="picks.html")
+        return
+    items = build_items(photos, load_groups(args.output))
+    if not items:
+        sys.exit("No group with two or more photos: nothing to pick.")
+    write_page(args.output, items)
+    log.info("picks.html: %d groups with two or more photos", len(items))
+    serve(args.output, port=args.port, open_browser=not args.no_browser, page="picks.html")
+
+
+def cmd_pick_score(args, config):
+    from culling.picks import format_score, load_picks, score_ranking
+    from culling.ranking import load_ranking
+
+    photos = _load_photos_or_exit(args)
+    picks = load_picks(args.output)
+    if not picks:
+        sys.exit(f"No picks in {args.output / 'picks.json'} - run 'pick' first.")
+    ranking = load_ranking(args.output)
+    if not ranking:
+        sys.exit(f"No ranking.json in {args.output} - run 'rank' first.")
+    result = score_ranking(picks, photos, ranking)
+    names = {p["sha256"]: Path(p["primary_path"]).name for p in photos if p.get("sha256")}
+    print(format_score(result, names))
+    return result
 
 
 def cmd_score(args, config):
@@ -209,6 +268,20 @@ def cmd_judge(args, config):
                  "rerun the command to resume.")
 
 
+def cmd_rank(args, config):
+    """Best photo per group: variants in code, the VLM orders each variant, ranking.json;
+    then the report is rebuilt to show the decisions. Not part of `prepare`."""
+    from culling.ranking import run_ranking
+    from culling.vlm import VLMError
+
+    try:
+        run_ranking(args.output, config, dry_run=args.dry_run, max_requests=args.max_requests)
+    except VLMError as e:
+        sys.exit(_vlm_help(config["vlm"], e) + "\nProgress, if any, is saved in ranking.json; "
+                 "rerun the command to resume.")
+    cmd_report(args, config)
+
+
 def cmd_ping_vlm(args, config):
     from culling.vlm import VLMError, make_client
 
@@ -261,6 +334,17 @@ def main():
                        help="also send pairs that face identities already decided (same/different)")
     judge.add_argument("--max-pairs", type=int, default=None, metavar="N",
                        help="judge at most N pairs (default: judge.max_pairs, 0 = all)")
+    rank = add("rank", "best photo per group: variants in code, the VLM orders each variant (ranking.json)", False)
+    rank.add_argument("--dry-run", action="store_true",
+                      help="write the variants and the decisions so far, print the estimate, send nothing")
+    rank.add_argument("--max-requests", type=int, default=None, metavar="N",
+                      help="send at most N requests in this run (default: all open ones)")
+    pick = add("pick", "mark the best photo(s) of every multi-photo group in the browser (picks.json)", False)
+    pick.add_argument("--port", type=int, default=8765, help="local port (default 8765)")
+    pick.add_argument("--no-browser", action="store_true", help="do not open the browser")
+    pick.add_argument("--review-model", action="store_true",
+                      help="show the model's choice and reason from ranking.json, one ranked variant per screen")
+    add("pick-score", "compare ranking.json with picks.json", False)
     add("ping-vlm", "check that the VLM server (config vlm) answers and serves the model", False,
         needs_output=False)
     args = parser.parse_args()
@@ -271,7 +355,7 @@ def main():
     started = time.time()
     commands = {"prepare": cmd_prepare, "ingest": cmd_ingest, "group": cmd_group,
                 "faces": cmd_faces, "segments": cmd_segments, "report": cmd_report, "label": cmd_label, "score": cmd_score,
-                "judge": cmd_judge, "ping-vlm": cmd_ping_vlm}
+                "judge": cmd_judge, "rank": cmd_rank, "pick": cmd_pick, "pick-score": cmd_pick_score, "ping-vlm": cmd_ping_vlm}
     commands[args.command](args, config)
     log.info("Finished in %.1f s", time.time() - started)
 

@@ -35,7 +35,7 @@ Documentation: [docs/plan.md](docs/plan.md) (goal, constraints, phases),
     cut the day into parts at shooting pauses, per-segment statistics
         │  segments.json, segments_sheets/ (--sheets)
         ▼
- 3. SCORE (VLM)       Qwen3.5-9B on vLLM, one request per group     [planned]  docs/spec/vlm-scoring.md
+ 3. RANK (VLM)        culling/ranking.py, variants + best frame     [dry-run]  docs/spec/vlm-scoring.md
         ▼
  4. EXPORT            JSON / CSV + XMP sidecars for Lightroom       [planned]
         ▼
@@ -83,6 +83,8 @@ Then open `D:\cull\2024-06-15\report.html` in a browser.
 | `label --output Y [--port 8765] [--no-browser]` | Serve the report on `127.0.0.1` and save ground-truth labels to `labels.json` ([labels](docs/spec/labels.md)). |
 | `score --output Y [--groups F [F]]` | Compare `labels.json` with `groups.json` (or the given files) and write `errors.jpg`. |
 | `judge --output Y [--dry-run] [--include-faces-decided] [--max-pairs N]` | Grey-zone pairs for the VLM judge ([vlm-judge](docs/spec/vlm-judge.md)). Not part of `prepare`. |
+| `rank --output Y [--dry-run] [--max-requests N]` | Best photo(s) per group: keep / maybe in `ranking.json` and the report ([vlm-scoring](docs/spec/vlm-scoring.md)). Not part of `prepare`. |
+| `pick --output Y` / `pick-score --output Y` | Mark the best photo(s) per group in the browser; compare `ranking.json` with them ([labels](docs/spec/labels.md#best-photo-picks)). |
 | `ping-vlm` | Check that the VLM server (`vlm` in the config) answers and serves the configured model. |
 
 Every command accepts `--config path\to\config.yaml` (default: `config.yaml` next to `cull.py`).
@@ -109,6 +111,8 @@ culling/labels.py     labels.json I/O, boundaries between adjacent photos, scori
 culling/labelserver.py local http server for `cull.py label` (GET/POST /labels)
 culling/vlm.py        VLM client: OpenAI-compatible chat completions over urllib, error mapping, ping
 culling/judge.py      VLM judge: pair selection, pair images, prompt + schema, judging loop with resume
+culling/picks.py      best-photo picks: picks.html, picks.json, comparison with ranking.json
+culling/ranking.py    best photo per group: variants, prompt + schema, safety rules, ranking loop with resume
 tests/                pytest, synthetic data only
 docs/                 plan, todo, log, decisions, spec, research, datasets (see CLAUDE.md)
 ```

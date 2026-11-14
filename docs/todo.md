@@ -5,12 +5,20 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
 
 ## Now
 
-- **Phase 3: VLM scoring (pick the best photo per group).** Next big step
-  ([design](spec/vlm-scoring.md), [0020](decisions/0020-vlm-judge-parked.md)). The server runs on a
-  T4 with the 4-bit model ([aws-setup.md](aws-setup.md)); check how many images per request fit
-  there. Do not rely on the model to flag a mixed group: the judge run showed it misses changes of
-  action ([research](research/2026-11-11-judge-first-real-run.md)), and groups may still mix two
-  group photos that differ by one person ([0021](decisions/0021-partial-overlap-does-not-split.md)).
+- **Phase 3: switch `ranking.py` to judging each photo alone.** Comparing frames in one request
+  is position-biased with both the 4-bit and the full model (same winner in both orders 15 and 12
+  of 53). Judging each photo alone and ranking in code is stable (eyes/focus/expression agree in
+  95–98 % between 1024 and 1280 px), but ties at the top in ~55 % of variants
+  ([research](research/2026-11-14-ranking-full-model-and-per-photo.md)). To do: per-photo request
+  and schema in `ranking.py` (prompt and penalties from the experiment), cache per photo sha256,
+  ties at the top all `keep` (safe) or broken by a pairwise question asked in both orders.
+  Decide after the ground truth below shows whether the per-photo winners are right.
+- **Ground truth for "best photo" (user, ~20 min on 4a). Blocks the step above.** The tool is
+  ready: `cull.py pick --output data\out-4a` (79 groups), rules on the page. Afterwards
+  `cull.py pick-score` for `ranking.json`, and the saved per-photo / describe-first answers in
+  `data/out-4a/` measured against the picks. Without it
+  `ranking.variant_similarity` (0.90 keeps 72 % of the wedding, 0.85 61 %, one winner per group
+  40 %; [research](research/2026-11-11-ranking-variants-dry-run.md)) and the prompt cannot be tuned.
 
 ## Next
 
@@ -32,6 +40,8 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
 
 - **Labelling tool: look-back joins.** Only adjacent pairs can be labelled; "photo 5 belongs with
   photo 2" cannot be recorded. Add such a label if the user sees it often.
+- **Ranking: oversized variants.** A variant longer than `ranking.max_images` is cut into parts
+  with one keep each; a play-off between the part winners would save keeps if such variants are common.
 - **VLM judge again with a stronger model.** Parked ([0020](decisions/0020-vlm-judge-parked.md)).
   When the full Qwen3.5-9B (g6) or a larger model runs, re-run `cull.py judge` on 4a (~10 min) and
   try a v3 prompt that limits "person added/missing" to posed group photos.

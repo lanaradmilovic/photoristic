@@ -1,6 +1,6 @@
 # 0019 — Safety rules are applied in code, never left to the model
 
-- Status: accepted (to be implemented in phase 3)
+- Status: accepted; implemented in `culling/ranking.py`, where [0022](0022-variants-in-code-model-ranks.md) postpones every reject
 - Date: 2026-10-19
 - Decided by: the user (follows from the hard rule)
 

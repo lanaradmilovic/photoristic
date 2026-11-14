@@ -5,3 +5,6 @@ __pycache__/
 data/
 models/
 propmt-images/
+
+# Reddit screenshots (large; text extracts in docs/reddit-competition/extracts/ are tracked)
+docs/reddit-competition/*.png

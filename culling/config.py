@@ -102,6 +102,14 @@ DEFAULTS = {
         "max_pairs": 0,
         "seconds_per_call": 4.0,
     },
+    "ranking": {
+        # Best photo per group (culling/ranking.py): code splits a group into variants of
+        # near-duplicate frames, the VLM orders the frames of one variant.
+        "variant_similarity": 0.90,
+        "variant_split_orientation": True,
+        "variant_split_people": True,
+        "max_images": 8,
+    },
 }
 
 

@@ -126,7 +126,7 @@ grouping:
 vlm:
   provider: openai_compatible   # later: bedrock
   base_url: http://localhost:8001/v1   # SSH tunnel; port 8000 here is taken (docs/aws-setup.md)
-  model: Intel/Qwen3.5-9B-int4-AutoRound   # 4-bit build for g4dn (T4 16 GB); full model: Qwen/Qwen3.5-9B
+  model: Qwen/Qwen3.5-9B           # full model on g6 (L4 24 GB); on g4dn (T4 16 GB): Intel/Qwen3.5-9B-int4-AutoRound
   api_key_env: VLM_API_KEY      # env var name; vLLM accepts any value if no key is configured
   timeout_seconds: 120
   max_retries: 3
@@ -154,3 +154,17 @@ judge:
   include_faces_decided: false  # also send pairs where identities already said same/different
   max_pairs: 0                # 0 = all selected pairs
   seconds_per_call: 4.0       # for the dry-run duration estimate; replace with the measured value
+
+# Best photo per group (culling/ranking.py, `cull.py rank`). Code splits every group into
+# variants of near-duplicate frames; the VLM only orders the frames of one variant. The
+# best frame of every variant is `keep`, the others `maybe`; nothing is rejected
+# (docs/decisions/0022-variants-in-code-model-ranks.md).
+ranking:
+  # Two frames are the same variant when their DINOv2 similarity is at least this (to every
+  # frame of the variant). Lower = fewer keeps, but frames that are not interchangeable get
+  # compared. 0.90 is the people look-back threshold: below it DINOv2 does not tell a
+  # different guest at the same spot from the same people.
+  variant_similarity: 0.90
+  variant_split_orientation: true   # a vertical and a horizontal frame of one moment are both kept
+  variant_split_people: true        # a known person in one frame and not in the other = separate variants
+  max_images: 8                     # images per request; a longer variant is cut into parts, one keep each

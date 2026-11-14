@@ -16,13 +16,15 @@ can be re-run independently and the pipeline resumes after an interruption.
 | `groups.json` | group | `{created, config_used, n_groups, n_photos, groups: [group…]}` |
 | `segments.json` | group / segments | day segments at shooting pauses, with per-segment statistics, see [segments.md](segments.md) |
 | `segments_sheets/<segment_id>.jpg` | segments --sheets | contact sheet of one segment (review only) |
-| `report.html` | group / report | visual check of the groups; also the labelling tool (*Label mode*) |
+| `report.html` | group / report / rank | visual check of the groups; also the labelling tool (*Label mode*); shows keep / maybe when `ranking.json` matches the groups |
 | `labels.json` | label | ground truth, see [labels.md](labels.md) |
 | `errors.jpg`, `errors.<suffix>.jpg` | score | contact sheet of the boundaries where the grouping disagrees with the labels (`errors.nofaces.jpg` for `groups.nofaces.json`) |
 | `judge_pairs.json` | judge | the grey-zone pairs selected for the VLM judge, with the selection statistics |
 | `judge_pairs.jpg` | judge | contact sheet of those pairs (`judge_pairs_02.jpg`, … when very long) |
 | `judge_pairs/<a>_<b>.jpg` | judge | one side-by-side image per pair, exactly what is sent to the VLM |
 | `judge_verdicts.json` | judge | the VLM's verdict per pair (written after every pair; resume state) and the comparison with `labels.json` |
+| `ranking.json` | rank | variants of every group, the VLM's order per variant (written after every request; resume state) and the decision per photo, see [vlm-scoring.md](vlm-scoring.md#rankingjson) |
+| `picks.html`, `picks.json` | pick | the best-photo picking page and the user's picks (ground truth for the ranking), see [labels.md](labels.md#best-photo-picks) |
 | `cull.log` | all | file names, counts, timings and errors; never image content |
 
 Judge file schemas are in [vlm-judge.md](vlm-judge.md#files).

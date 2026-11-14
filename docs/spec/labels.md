@@ -61,6 +61,43 @@ recall / F1 for "same", and every error with names, similarity and gap. Errors g
 With two files the metrics are side by side, plus which boundaries one gets right and the other
 wrong. Any saved `groups*.json` can be scored, so a change is measured before and after.
 
+## Best-photo picks
+
+Status: implemented (`culling/picks.py`, `cull.py pick`, `cull.py pick-score`). Ground truth for
+the ranking ([vlm-scoring](vlm-scoring.md)).
+
+```bash
+.venv\Scripts\python cull.py pick --output data\out-4a        # opens picks.html
+.venv\Scripts\python cull.py pick-score --output data\out-4a  # ranking.json vs picks.json
+```
+
+`picks.html` shows one multi-photo group per screen (previews, capture order, numbered). It does
+not show the program's choice. The rules are on the page (in Serbian): mark every photo the agency
+would deliver, usually one; more only for a different framing, moment or people; between two
+near-identical frames pick one and press **T** (toss-up, excluded from "did the model pick right");
+**N** when no photo is deliverable. Keys: click or `1`–`9` toggle, `Z` + number or 🔍 full screen
+(`Space` toggles there), `Enter` next unfinished group, `←` `→`. Every change is POSTed at once.
+
+`picks.json`: `{updated, groups: {key: {picked: [sha256], none, tossup, names, at}}}`; `key` is the
+group's photo sha256 values, sorted and joined with `|`. Matching is per photo, so picks survive
+re-grouping and re-ranking.
+
+**Review mode** (`cull.py pick --output <out> --review-model`, asked for by the user on
+2026-11-14: blind picking is tiring and she wants to see how the model decides). One screen per
+multi-frame variant that `ranking.json` has an answer for, photos in the order and with the numbers
+the model saw. The model's winner has a dashed blue frame and `MODEL ★`; every caption has the
+model's place and the flaw it named; below the photos are its reason and, when
+`ranking_reversed.json` exists in the output folder (rows `{photo_ids, winner_reversed,
+reason_reversed}` of a check that asked the same variant in reversed order), whether the reversed
+question gave the same winner. **A** picks the model's winner, a click picks another photo, **T**
+without a pick takes the model's winner as a toss-up. These picks are stored in the same
+`picks.json` under the variant's key, with `seen_model: true`: they measure agreement with a
+choice the user saw, not an independent ground truth.
+
+`pick-score` prints, for the groups done: picked photos that the ranking keeps (anything else is
+only `maybe`), kept photos that were not picked (review time), and how often the model's winner
+of a variant was picked (toss-ups and "none" excluded).
+
 ## Verifying the report UI
 
 The Claude-in-Chrome extension cannot open `127.0.0.1` / `localhost` on this workstation. Use

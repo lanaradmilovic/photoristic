@@ -58,3 +58,24 @@ link them here instead of copying.
   port, duplicate segment bars, stale `segments.json` / sheets, segment order past S99, and a
   segments failure no longer stops the report. All branches are in `main`; segments spec:
   [spec/segments.md](spec/segments.md). Smaller findings: [todo.md](todo.md).
+
+## Session 7 — 2026-11-11
+- Phase 3 implemented on branch `scoring`: `culling/ranking.py`, `cull.py rank`, keep / maybe in
+  `report.html`, `tests/test_ranking.py` (166 tests). Code splits groups into variants, the model
+  orders one variant, nothing is rejected ([0022](decisions/0022-variants-in-code-model-ranks.md),
+  [spec](spec/vlm-scoring.md)).
+- Dry-run on all five folders, no server: keeps 72 % at the defaults
+  ([research](research/2026-11-11-ranking-variants-dry-run.md)).
+- First real `rank` run on 4a (T4, image limit on the server raised from 2 to 8): 53 of 53 valid
+  answers in 8.5 min, but a reversed-order check shows position bias, same winner in 15 of 53
+  ([research](research/2026-11-12-ranking-first-real-run.md)). Winners not usable; next steps in todo.
+
+## Session 8 — 2026-11-13 / 14
+- `g6.xlarge` (L4) set up with the full Qwen3.5-9B; three start fixes in
+  [aws-setup.md](aws-setup.md). `config.yaml` now names the full model.
+- Full model, same ranking prompt: still position-biased (same winner in both orders 12 of 53).
+  Each photo judged alone + ranking in code: order-independent and stable across image sizes,
+  but ties in ~55 % of variants ([research](research/2026-11-14-ranking-full-model-and-per-photo.md)).
+  Not yet in `ranking.py`; ground truth needed first.
+- "Describe each photo, then choose" in both orders: 15 of 53 stable, the bias moved to the last
+  photo (same research note).

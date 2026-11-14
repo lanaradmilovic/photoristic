@@ -1,7 +1,8 @@
 """Small local server for labelling in the browser (`python cull.py label`).
 
-Serves the output folder (report.html, thumbs/, previews/) on 127.0.0.1 and accepts
-POST /labels, which writes labels.json. Standard library only.
+Serves the output folder (report.html, picks.html, thumbs/, previews/) on 127.0.0.1 and
+accepts POST /labels (writes labels.json) and POST /picks (writes picks.json, the "best
+photo" ground truth of `python cull.py pick`). Standard library only.
 """
 import json
 import logging
@@ -11,11 +12,15 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 from culling.labels import load_labels, normalise_labels, save_labels
+from culling.picks import load_picks, normalise_picks, save_picks
 
 log = logging.getLogger(__name__)
 
 MAX_BODY = 20 * 1024 * 1024
-SAVE_LOCK = threading.Lock()   # ThreadingHTTPServer: one labels.json write at a time
+SAVE_LOCK = threading.Lock()   # ThreadingHTTPServer: one file write at a time
+# path -> (load, normalise, save, file name)
+STORES = {"/labels": (load_labels, normalise_labels, save_labels, "labels.json"),
+          "/picks": (load_picks, normalise_picks, save_picks, "picks.json")}
 
 
 class LabelHandler(SimpleHTTPRequestHandler):
@@ -36,15 +41,18 @@ class LabelHandler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
-        if self.path.split("?")[0] == "/labels":
-            self._json(200, load_labels(self.out_dir))
+        store = STORES.get(self.path.split("?")[0])
+        if store:
+            self._json(200, store[0](self.out_dir))
             return
         super().do_GET()
 
     def do_POST(self):
-        if self.path.split("?")[0] != "/labels":
+        store = STORES.get(self.path.split("?")[0])
+        if store is None:
             self._json(404, {"error": "not found"})
             return
+        _, normalise, save, name = store
         try:
             length = int(self.headers.get("Content-Length") or 0)
         except ValueError:
@@ -53,14 +61,14 @@ class LabelHandler(SimpleHTTPRequestHandler):
             self._json(413, {"error": "body too large or missing Content-Length"})
             return
         try:
-            labels = normalise_labels(json.loads(self.rfile.read(length).decode("utf-8")))
+            data = normalise(json.loads(self.rfile.read(length).decode("utf-8")))
         except (ValueError, UnicodeDecodeError) as exc:
             self._json(400, {"error": str(exc)})
             return
         with SAVE_LOCK:
-            save_labels(self.out_dir, labels)
-        log.info("labels.json: %d labels saved", len(labels))
-        self._json(200, {"saved": len(labels)})
+            save(self.out_dir, data)
+        log.info("%s: %d entries saved", name, len(data))
+        self._json(200, {"saved": len(data)})
 
 
 def make_server(out_dir, port=0):
@@ -68,10 +76,10 @@ def make_server(out_dir, port=0):
     return ThreadingHTTPServer(("127.0.0.1", port), partial(LabelHandler, out_dir=out_dir))
 
 
-def serve(out_dir, port=8765, open_browser=True):
+def serve(out_dir, port=8765, open_browser=True, page="report.html#label"):
     server = make_server(out_dir, port)
-    url = f"http://127.0.0.1:{server.server_address[1]}/report.html#label"
-    log.info("Labelling at %s  (Ctrl-C to stop; labels are saved to labels.json after every change)", url)
+    url = f"http://127.0.0.1:{server.server_address[1]}/{page}"
+    log.info("Open %s  (Ctrl-C to stop; every change is saved at once)", url)
     if open_browser:
         webbrowser.open(url)
     try:
