@@ -28,6 +28,7 @@ minutes instead of culling for 3 hours.
 | [docs/spec/](docs/spec/) | how ingest, grouping, faces, segments, labels, VLM judge/scoring and output files work now |
 | [docs/research/](docs/research/) | measurements and experiments behind decisions (dated, never edited) |
 | [docs/aws-setup.md](docs/aws-setup.md) | the user works on the AWS / vLLM server (status + steps, in Serbian) |
+| [docs/interviews/](docs/interviews/) | what the agency (Mitar, Peđa, Ksenija) said they need: two client interviews, in Serbian |
 | [docs/datasets.md](docs/datasets.md) | where the five test folders and their outputs are |
 | [docs/log.md](docs/log.md) | what happened in earlier sessions |
 
