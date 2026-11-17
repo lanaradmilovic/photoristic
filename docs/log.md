@@ -79,3 +79,11 @@ link them here instead of copying.
   Not yet in `ranking.py`; ground truth needed first.
 - "Describe each photo, then choose" in both orders: 15 of 53 stable, the bias moved to the last
   photo (same research note).
+
+## Session 9 — 2026-11-15
+- Everything up to here committed and pushed on `scoring` (24bd703).
+- Four-steps answers analysed: the winner is fixed in step 2 and the criteria are invented per
+  answer. New flow tested on the 27B: fixed checks answered `A / B / same` in both orders,
+  agreement decided in code. Consistent (identical pairs clean, synthetic blur and exposure found),
+  but a winner in only 10 of 53 variants
+  ([research](research/2026-11-15-report-prompt-both-orders.md)). `ranking.py` unchanged.

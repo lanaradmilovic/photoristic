@@ -13,6 +13,12 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
   and schema in `ranking.py` (prompt and penalties from the experiment), cache per photo sha256,
   ties at the top all `keep` (safe) or broken by a pairwise question asked in both orders.
   Decide after the ground truth below shows whether the per-photo winners are right.
+- **Pairwise report prompt (2026-11-15): consistent, not selective.** Fixed checks, `A / B / same`,
+  both orders, agreement in code: 0 invented differences on identical pairs, 3 of 576 answers
+  depend on the order, but only 10 of 53 variants get one winner (85 % of photos kept)
+  ([research](research/2026-11-15-report-prompt-both-orders.md)). Not in `ranking.py`. Decide
+  (user): accept "tie = keep all" with this keep rate, or add a taste step for ties. To try:
+  face crops for the eyes check, log-probabilities instead of the three answers.
 - **Ground truth for "best photo" (user, ~20 min on 4a). Blocks the step above.** The tool is
   ready: `cull.py pick --output data\out-4a` (79 groups), rules on the page. Afterwards
   `cull.py pick-score` for `ranking.json`, and the saved per-photo / describe-first answers in
