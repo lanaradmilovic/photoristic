@@ -23,6 +23,8 @@ from pathlib import Path
 PICKS_FILE = "picks.json"
 PAGE_FILE = "picks.html"
 REVERSED_FILE = "ranking_reversed.json"  # optional reversed-order check, read by the review mode
+# Why the picked photo beat the others: optional one-click answers on the page.
+REASONS = ("eyes", "focus", "expression", "framing", "moment")
 
 
 def group_key(shas):
@@ -30,9 +32,50 @@ def group_key(shas):
     return "|".join(sorted(shas))
 
 
-def build_items(photos, groups_data):
+def load_sample(path):
+    """A sample file for `cull.py pick --sample`: [{"photo": "<file name>", "kind": "..."}],
+    one entry per group to show, named by any photo of the group (file names survive
+    re-grouping, group ids do not). `kind` is the author's note on why the group was
+    chosen; it is never shown. `"ask": true` (two-photo groups only) adds one question
+    after the pick: would it matter if the program had kept the other photo? It is for
+    the pairs the model could not decide. Returns [{photo, ask}] in the file's order."""
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+    if not isinstance(raw, list) or not raw:
+        raise ValueError(f"{path}: expected a non-empty JSON list")
+    for i, item in enumerate(raw):
+        if not isinstance(item, dict) or set(item) - {"photo", "kind", "ask"} or not isinstance(item.get("photo"), str) \
+                or not isinstance(item.get("ask", False), bool):
+            raise ValueError(f"{path}: entry {i} must be an object with 'photo' and optionally 'kind' and 'ask' (true/false)")
+    return [{"photo": item["photo"], "ask": item.get("ask", False)} for item in raw]
+
+
+def build_items(photos, groups_data, sample=None):
     """[{key, group_id, photos: [{sha, name, preview}]}] for every group with two or more
-    usable photos (ingested, with a preview), in the order of groups.json."""
+    usable photos (ingested, with a preview), in the order of groups.json. With `sample`
+    ([{photo, ask}], see load_sample) only the groups of those photos, in that order; an
+    item with `ask` gets the "would the other photo do?" question on the page."""
+    items = _all_items(photos, groups_data)
+    if sample is None:
+        return items
+    chosen = []
+    for entry in sample:
+        name = entry["photo"]
+        found = [it for it in items if any(p["name"].lower() == name.lower() for p in it["photos"])]
+        if not found:
+            raise ValueError(f"sample: {name} is not in a group with two or more usable photos")
+        if found[0] in chosen:
+            raise ValueError(f"sample: the group of {name} ({found[0]['group_id']}) is listed twice")
+        if entry.get("ask"):
+            if len(found[0]["photos"]) != 2:
+                raise ValueError(f"sample: 'ask' needs a group of two photos, {name} is in {found[0]['group_id']} "
+                                 f"with {len(found[0]['photos'])}")
+            found[0]["ask"] = True
+        chosen.append(found[0])
+    return chosen
+
+
+def _all_items(photos, groups_data):
     by_id = {p["id"]: p for p in photos}
     items = []
     for g in groups_data["groups"]:
@@ -83,8 +126,10 @@ def build_model_items(photos, ranking, reversed_rows=None):
 
 def normalise_picks(raw):
     """Validate what the page POSTs: {key: {picked: [sha], none: bool, tossup: bool,
-    names: [..], at: iso, seen_model: bool}}; seen_model marks a pick made in the review
-    mode, with the model's choice on the screen. A group with nothing picked and `none` false is dropped
+    names: [..], at: iso, seen_model: bool, reasons: [..], note: str}}; seen_model marks a
+    pick made in the review mode, with the model's choice on the screen; reasons (REASONS)
+    and note say why the picked photo won, both optional; swap_ok is the answer to "would
+    it matter if the program had kept the other photo?" (true = it would not). A group with nothing picked and `none` false is dropped
     (not done). Raises ValueError on anything malformed."""
     if not isinstance(raw, dict):
         raise ValueError("picks must be a JSON object")
@@ -106,19 +151,31 @@ def normalise_picks(raw):
                     "at": str(entry.get("at") or datetime.now().isoformat(timespec="seconds"))}
         if entry.get("seen_model"):
             out[key]["seen_model"] = True
+        reasons = entry.get("reasons") or []
+        if not isinstance(reasons, list) or not all(r in REASONS for r in reasons):
+            raise ValueError(f"reasons must be among {', '.join(REASONS)}")
+        if reasons and not none:
+            out[key]["reasons"] = [r for r in REASONS if r in reasons]
+        if isinstance(entry.get("swap_ok"), bool) and picked:
+            # the answer to "would the other photo do?"; yes is a toss-up by definition
+            out[key]["swap_ok"] = entry["swap_ok"]
+            out[key]["tossup"] = entry["swap_ok"]
+        note = str(entry.get("note") or "").strip()[:2000]
+        if note:
+            out[key]["note"] = note
     return out
 
 
-def load_picks(out_dir):
-    path = Path(out_dir) / PICKS_FILE
+def load_picks(out_dir, name=PICKS_FILE):
+    path = Path(out_dir) / name
     if not path.exists():
         return {}
     with open(path, encoding="utf-8") as f:
         return json.load(f).get("groups", {})
 
 
-def save_picks(out_dir, picks):
-    path = Path(out_dir) / PICKS_FILE
+def save_picks(out_dir, picks, name=PICKS_FILE):
+    path = Path(out_dir) / name
     tmp = path.with_suffix(".tmp")
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump({"updated": datetime.now().isoformat(timespec="seconds"), "groups": picks}, f,
@@ -184,6 +241,14 @@ mu iste slike date unazad. Ako nije, izbor je zavisio od redosleda, a ne od slik
 <p>Sve se čuva odmah u <code>picks.json</code>.</p>
 """
 
+RULES_MEETING = """
+<p>Za svaku grupu označite sliku koju biste <b>isporučili mladencima</b>. Obično je to jedna; više
+samo ako biste zaista dali obe. Ako je svejedno koja ide, izaberite jednu i pritisnite <b>T</b>.
+Ako nijedna nije za isporuku, pritisnite <b>N</b>. Ispod slika možete jednim klikom reći zašto baš ta.</p>
+<p class="muted">Klik ili <b>1</b>–<b>9</b> označava sliku · lupa 🔍 otvara preko celog ekrana ·
+<b>Enter</b> sledeća grupa · <b>←</b> / <b>→</b> nazad / napred.</p>
+"""
+
 CSS = """
 :root { --bg:#f6f6f4; --card:#fff; --text:#1d1d1f; --muted:#6b6b70; --line:#e2e2e0; --pick:#15803d;
         --accent:#2f6fde; --warn:#b45309; }
@@ -229,6 +294,18 @@ main { padding:14px 18px 40px; }
 #model.on { display:block; } #model p { margin:6px 0; } #model q { font-style:italic; }
 #model .ok { color:var(--pick); font-weight:600; } #model .bad { color:var(--warn); font-weight:600; }
 #agree { display:none; }
+#why, #ask { margin-top:16px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+#ask:empty { display:none; }
+#ask { font-size:17px; padding:10px 14px; background:var(--card); border:1px solid var(--line);
+       border-left:5px solid var(--accent); border-radius:8px; max-width:980px; }
+#ask button.on { background:var(--accent); }
+#why button, #ask button { font:inherit; padding:6px 14px; border:1px solid var(--line); border-radius:16px;
+              background:var(--card); color:var(--text); cursor:pointer; }
+#why button.on, #ask button.on { color:#fff; border-color:transparent; }
+#why button.on { background:var(--pick); color:#fff; border-color:transparent; }
+#why button:disabled { opacity:.4; cursor:default; }
+#note { font:inherit; flex:1; min-width:260px; max-width:620px; padding:6px 10px; border:1px solid var(--line);
+        border-radius:6px; background:var(--card); color:var(--text); }
 #big.open { display:flex; } #big img { max-width:96vw; max-height:88vh; border:5px solid transparent; }
 #big img.picked { border-color:#4ade80; }
 """
@@ -291,10 +368,31 @@ function modelBox(it) {
   }
   return h;
 }
+function setSwap(ok) {
+  const it = items[pos], e = picks[it.key]; if (!e || !e.picked.length) return;
+  if (e.swap_ok === ok) { delete e.swap_ok; e.tossup = false; } else { e.swap_ok = ok; e.tossup = ok; }
+  touch(it);
+}
 function touch(it) {
   const e = entry(it); e.at = new Date().toISOString().slice(0, 19);
+  if (e.none || !e.picked.length) { delete e.reasons; delete e.swap_ok; }
+  else if (typeof e.swap_ok === 'boolean' && e.swap_ok !== e.tossup) delete e.swap_ok;   // T pressed afterwards
   if (!e.none && !e.picked.length) { delete picks[it.key]; }
   save(); render();
+}
+const WHY = {eyes: 'oči', focus: 'oštrina', expression: 'izraz', framing: 'kadar', moment: 'trenutak'};
+function toggleReason(r) {
+  const it = items[pos], e = picks[it.key]; if (!e || !e.picked.length) return;
+  const have = e.reasons || [], i = have.indexOf(r);
+  if (i >= 0) have.splice(i, 1); else have.push(r);
+  e.reasons = have; touch(it);
+}
+function setNote(text) {
+  const it = items[pos], e = picks[it.key];
+  if (!e) { status('Prvo izaberi sliku (ili N), pa napomenu.', true); $('note').value = ''; return; }
+  if (text.trim()) e.note = text.trim(); else delete e.note;
+  e.at = new Date().toISOString().slice(0, 19);
+  save();   // no render: it would replace the button a click is landing on
 }
 function toggle(k) {
   const it = items[pos], ph = it.photos[k]; if (!ph) return;
@@ -352,6 +450,14 @@ function render() {
       `<button class="zoom" data-z="${k}" title="preko celog ekrana (Z pa ${k + 1})">🔍</button>` +
       `<div class="cap">${cap}</div></div>`;
   }).join('');
+  const can = !!e && e.picked.length > 0;
+  $('ask').innerHTML = !(it.ask && can) ? '' :
+    '<b>Da je program ostavio onu drugu sliku, da li bi vam smetalo?</b>' +
+    `<button data-swap="no" class="${e.swap_ok === false ? 'on' : ''}">Smetalo bi</button>` +
+    `<button data-swap="yes" class="${e.swap_ok === true ? 'on' : ''}">Ne bi, svejedno je</button>`;
+  $('why').innerHTML ='<span class="muted">Zašto baš ta?</span>' + Object.keys(WHY).map(r =>
+      `<button data-r="${r}" class="${can && (e.reasons || []).includes(r) ? 'on' : ''}"${can ? '' : ' disabled'}>${WHY[r]}</button>`).join('') +
+    `<input id="note" placeholder="Napomena — nije obavezno" value="${esc(e && e.note || '')}">`;
   if (zoomed >= 0) showBig(zoomed);
 }
 function showBig(k) {
@@ -371,9 +477,13 @@ $('big').addEventListener('click', () => closeBig());
 $('prev').onclick = () => go(pos - 1); $('next').onclick = () => go(pos + 1);
 $('todo').onclick = nextTodo; $('none').onclick = setNone; $('tossup').onclick = setTossup;
 $('agree').onclick = agree;
+$('ask').addEventListener('click', ev => { const b = ev.target.closest('[data-swap]'); if (b) setSwap(b.dataset.swap === 'yes'); });
+$('why').addEventListener('click', ev => { const b = ev.target.closest('[data-r]'); if (b) toggleReason(b.dataset.r); });
+$('why').addEventListener('change', ev => { if (ev.target.id === 'note') setNote(ev.target.value); });
 document.addEventListener('keydown', ev => {
   if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
   const k = ev.key;
+  if (ev.target.tagName === 'INPUT') { if (k === 'Escape' || k === 'Enter') ev.target.blur(); return; }
   if (zoomed >= 0) {
     if (k === 'Escape') closeBig();
     else if (k === ' ') { toggle(zoomed); }
@@ -397,11 +507,13 @@ load();
 """
 
 
-def write_page(out_dir, items, review=False):
+def write_page(out_dir, items, review=False, meeting=False):
     """picks.html in the output folder; previews by relative path, nothing from the internet.
     `review` only changes the title and the rules; the model's choice is shown for every
-    item that has a `model` (build_model_items)."""
+    item that has a `model` (build_model_items). `meeting` is the page for the agency:
+    short rules addressed to them, closed from the start."""
     title = "Izbor modela: najbolja slika" if review else "Najbolja slika iz grupe"
+    rules = RULES_REVIEW if review else RULES_MEETING if meeting else RULES
     data = json.dumps({"items": items}, ensure_ascii=False).replace("</", "<\\/")
     page = f"""<!doctype html>
 <html lang="sr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -416,9 +528,11 @@ def write_page(out_dir, items, review=False):
   <span id="progress"></span><div class="bar"><div id="fill"></div></div><span id="status" class="muted"></span>
 </header>
 <main>
-<details id="rules" open><summary><b>Pravila i tasteri</b> (klikni da sakriješ / prikažeš)</summary>{RULES_REVIEW if review else RULES}</details>
+<details id="rules"{'' if meeting else ' open'}><summary><b>Pravila i tasteri</b> (klikni da sakriješ / prikažeš)</summary>{rules}</details>
 <div class="state" id="state"></div>
 <div class="grid" id="grid"></div>
+<div id="ask"></div>
+<div id="why"></div>
 <div id="model"></div>
 </main>
 <div id="big"><img id="bigimg" alt=""><div id="bigcap"></div></div>
@@ -470,6 +584,51 @@ def score_ranking(picks, photos, ranking):
             r["model_variants"] += 1
             r["model_hits"] += s in picked
     return r
+
+
+def format_reasons(picks):
+    """How often each reason was given, and the notes, for the groups done."""
+    counts = {r: sum(r in (e.get("reasons") or []) for e in picks.values()) for r in REASONS}
+    chosen = sum(1 for e in picks.values() if e["picked"])
+    lines = [f"reasons given ({sum(1 for e in picks.values() if e.get('reasons'))} of {chosen} groups with a pick): "
+             + ", ".join(f"{r} {n}" for r, n in sorted(counts.items(), key=lambda c: -c[1])),
+             f"photos picked per group: " + ", ".join(
+                 f"{n} photo{'s' if n > 1 else ''} in {k} groups" for n, k in sorted(
+                     {n: sum(len(e["picked"]) == n for e in picks.values()) for n in
+                      {len(e["picked"]) for e in picks.values() if e["picked"]}}.items()))]
+    asked = [e for e in picks.values() if "swap_ok" in e]
+    if asked:
+        lines.append(f"'would the other photo do?': {sum(e['swap_ok'] for e in asked)} of {len(asked)} said it would "
+                     f"(it would not: {', '.join((e['names'] or ['?'])[0] for e in asked if not e['swap_ok']) or 'none'})")
+    for e in picks.values():
+        if e.get("note"):
+            lines.append(f"  note ({(e['names'] or ['?'])[0]} ...): {e['note']}")
+    return "\n".join(lines)
+
+
+def compare_picks(picks, other):
+    """Two people's picks on the groups both did (toss-ups and 'none' of either left out):
+    {both, same, overlap, different: [names of the group]}."""
+    r = {"both": 0, "same": 0, "overlap": 0, "different": []}
+    for key, a in picks.items():
+        b = other.get(key)
+        if not b or a["none"] or b["none"] or a["tossup"] or b["tossup"]:
+            continue
+        r["both"] += 1
+        if set(a["picked"]) == set(b["picked"]):
+            r["same"] += 1
+        elif set(a["picked"]) & set(b["picked"]):
+            r["overlap"] += 1
+        else:
+            r["different"].append(a["names"])
+    return r
+
+
+def format_comparison(r, name_a, name_b):
+    lines = [f"{name_a} against {name_b}: {r['both']} groups done in both (toss-ups and 'none' left out), "
+             f"same choice {r['same']}, partly the same {r['overlap']}, different {len(r['different'])}"]
+    lines += [f"  different: {', '.join(names[:3])}{' ...' if len(names) > 3 else ''}" for names in r["different"]]
+    return "\n".join(lines)
 
 
 def format_score(r, names):

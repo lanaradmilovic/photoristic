@@ -34,3 +34,5 @@ Rules:
 | [0020](0020-vlm-judge-parked.md) | VLM judge out of grouping for now; VLM to scoring | accepted | 2026-11-11 |
 | [0021](0021-partial-overlap-does-not-split.md) | Partial overlap of face identities splits a group | **rejected** | 2026-11-11 |
 | [0022](0022-variants-in-code-model-ranks.md) | Code decides how many photos a group keeps; the model only ranks; no reject | accepted | 2026-11-11 |
+| [0023](0023-agency-corrects-our-groups.md) | The agency corrects our groups instead of labelling from scratch | accepted | 2026-11-17 |
+| [0024](0024-contradictions-side-by-side.md) | Contradicting answers are asked again as two examples side by side | proposed | 2026-11-23 |

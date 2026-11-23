@@ -1,8 +1,9 @@
 """Small local server for labelling in the browser (`python cull.py label`).
 
 Serves the output folder (report.html, picks.html, thumbs/, previews/) on 127.0.0.1 and
-accepts POST /labels (writes labels.json) and POST /picks (writes picks.json, the "best
-photo" ground truth of `python cull.py pick`). Standard library only.
+accepts POST /labels (writes labels.json), POST /picks (writes picks.json, the "best
+photo" ground truth of `python cull.py pick`) and POST /meeting (writes
+meeting_answers.json of `python cull.py meeting`). Standard library only.
 """
 import json
 import logging
@@ -12,7 +13,8 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 from culling.labels import load_labels, normalise_labels, save_labels
-from culling.picks import load_picks, normalise_picks, save_picks
+from culling.meeting import ANSWERS_FILE, load_answers, normalise_answers, save_answers
+from culling.picks import PICKS_FILE, load_picks, normalise_picks, save_picks
 
 log = logging.getLogger(__name__)
 
@@ -20,12 +22,14 @@ MAX_BODY = 20 * 1024 * 1024
 SAVE_LOCK = threading.Lock()   # ThreadingHTTPServer: one file write at a time
 # path -> (load, normalise, save, file name)
 STORES = {"/labels": (load_labels, normalise_labels, save_labels, "labels.json"),
-          "/picks": (load_picks, normalise_picks, save_picks, "picks.json")}
+          "/picks": (load_picks, normalise_picks, save_picks, "picks.json"),
+          "/meeting": (load_answers, normalise_answers, save_answers, ANSWERS_FILE)}
 
 
 class LabelHandler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, out_dir, **kwargs):
+    def __init__(self, *args, out_dir, stores=STORES, **kwargs):
         self.out_dir = out_dir
+        self.stores = stores
         super().__init__(*args, directory=str(out_dir), **kwargs)
 
     def log_message(self, fmt, *args):
@@ -36,19 +40,24 @@ class LabelHandler(SimpleHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
 
+    def end_headers(self):
+        # Pages are rebuilt under the same URL (picks.html with and without a sample):
+        # the browser must never show a copy it kept.
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
     def do_GET(self):
-        store = STORES.get(self.path.split("?")[0])
+        store = self.stores.get(self.path.split("?")[0])
         if store:
             self._json(200, store[0](self.out_dir))
             return
         super().do_GET()
 
     def do_POST(self):
-        store = STORES.get(self.path.split("?")[0])
+        store = self.stores.get(self.path.split("?")[0])
         if store is None:
             self._json(404, {"error": "not found"})
             return
@@ -67,17 +76,21 @@ class LabelHandler(SimpleHTTPRequestHandler):
             return
         with SAVE_LOCK:
             save(self.out_dir, data)
-        log.info("%s: %d entries saved", name, len(data))
-        self._json(200, {"saved": len(data)})
+        count = len(data["pairs"]) + len(data["choices"]) if name == ANSWERS_FILE else len(data)
+        log.info("%s: %d entries saved", name, count)
+        self._json(200, {"saved": count})
 
 
-def make_server(out_dir, port=0):
-    """ThreadingHTTPServer bound to 127.0.0.1; port 0 picks a free one."""
-    return ThreadingHTTPServer(("127.0.0.1", port), partial(LabelHandler, out_dir=out_dir))
+def make_server(out_dir, port=0, picks_file=PICKS_FILE):
+    """ThreadingHTTPServer bound to 127.0.0.1; port 0 picks a free one. `picks_file` is
+    the file behind /picks (another person's picks go to their own file)."""
+    stores = {**STORES, "/picks": (partial(load_picks, name=picks_file), normalise_picks,
+                                   partial(save_picks, name=picks_file), picks_file)}
+    return ThreadingHTTPServer(("127.0.0.1", port), partial(LabelHandler, out_dir=out_dir, stores=stores))
 
 
-def serve(out_dir, port=8765, open_browser=True, page="report.html#label"):
-    server = make_server(out_dir, port)
+def serve(out_dir, port=8765, open_browser=True, page="report.html#label", picks_file=PICKS_FILE):
+    server = make_server(out_dir, port, picks_file)
     url = f"http://127.0.0.1:{server.server_address[1]}/{page}"
     log.info("Open %s  (Ctrl-C to stop; every change is saved at once)", url)
     if open_browser:

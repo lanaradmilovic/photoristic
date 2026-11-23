@@ -24,11 +24,12 @@ minutes instead of culling for 3 hours.
 |---|---|
 | [docs/todo.md](docs/todo.md) | **at the start of every session** — what is next |
 | [docs/plan.md](docs/plan.md) | goal, fixed constraints, phases |
+| [docs/requirements.md](docs/requirements.md) | **before designing or changing grouping or selection** — what the agency requires (numbered rules, open questions with safe defaults) |
 | [docs/decisions/](docs/decisions/README.md) | before changing behaviour — was it decided or already rejected? |
 | [docs/spec/](docs/spec/) | how ingest, grouping, faces, segments, labels, VLM judge/scoring and output files work now |
 | [docs/research/](docs/research/) | measurements and experiments behind decisions (dated, never edited) |
 | [docs/aws-setup.md](docs/aws-setup.md) | the user works on the AWS / vLLM server (status + steps, in Serbian) |
-| [docs/interviews/](docs/interviews/) | what the agency (Mitar, Peđa, Ksenija) said they need: two client interviews, in Serbian |
+| [docs/interviews/](docs/interviews/) | what the agency (Mitar, Peđa, Ksenija) said they need: three client interviews and the photo-by-photo record of the third, in Serbian |
 | [docs/datasets.md](docs/datasets.md) | where the five test folders and their outputs are |
 | [docs/log.md](docs/log.md) | what happened in earlier sessions |
 

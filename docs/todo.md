@@ -5,6 +5,48 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
 
 ## Now
 
+- **Requirements are written down: [requirements.md](requirements.md)** (2026-11-23, from Peđa's
+  comments photo by photo). Read it before the three items below.
+- **Show Peđa the question page (user).** `cull.py meeting --output data\questions`: five
+  questions for [Q1–Q3 and Q6](requirements.md#open-questions), the contradicting examples side
+  by side ([0024](decisions/0024-contradictions-side-by-side.md)). Look at the wording first; it
+  is in `data/questions/meeting.json`. Afterwards `cull.py meeting-score --output data\questions`,
+  then write the answers into requirements.md and close the questions. Q7 stays the user's (which
+  `both` answers are really a different moment).
+- **New group rule (user decides). Replaces 0014.** A group is literally the same moment; a new
+  pose or action is a new group; orientation, black-and-white and a flash that did not fire do not
+  split ([G1–G8](requirements.md#groups)). Write the decision, redo the 4a and Talići 1 labels
+  ([0023](decisions/0023-agency-corrects-our-groups.md)), then measure with `cull.py score`. First
+  candidate: the look-back join for photos with people (two of his three cuts, 75–117 s apart);
+  a higher similarity threshold alone does not give his groups
+  ([research](research/2026-11-23-meeting-choices-vs-signals.md)).
+- **Decide what the selection step does (user). Blocks phase 3.** Input is now
+  [K1–K12, B1–B6](requirements.md#how-many-frames-of-a-group-stay): bad frames out, exactly-same
+  frames reduced to one, the rest kept; fewer only for ordinary moments with many frames. One
+  winner per variant ([0022](decisions/0022-variants-in-code-model-ranks.md)) is stricter than
+  that (Peđa kept 59 of 78, [numbers](research/2026-11-19-agency-meeting-answers.md)). Missing
+  signals: who is in the frame (couple, family, guests) and how important the moment is. A kiss
+  must not count as closed eyes, a recoverable dark frame must not be marked down. Candidate signal
+  for "exactly the same" (K2): similarity of a crop around the main people, which separates the two
+  example pairs but not "one" from "both" in general
+  ([research](research/2026-11-24-same-or-not-two-pairs.md)). Write the decision record.
+- **Promised to the agency: an improvement by 2026-11-26.** Peđa is there on Thursdays for two or
+  three more weeks, then away for about two months (WhatsApp / video call possible).
+- **Data from the agency (user).** They give one wedding as an unedited and an edited package. Still
+  to ask: how many photos stay of 5–6 thousand, which program Ksenija culls in, whether Peđa deleted
+  frames before handing over Talici ([gaps](research/2026-11-19-file-number-gaps.md): 475 of at
+  least 3,050 are missing, so the pipeline has never seen plainly bad frames), and a wedding with
+  the photos of both photographers: the Talići folders hold one camera only, so Đole's frames of
+  that day are missing ([resolved Q10](requirements.md#resolved)).
+- **Group across cameras.** Main photographer and assistant shoot the same moment (wide and tight);
+  the agency wants both merged by capture time and chosen between
+  ([S5](requirements.md#scope)). Now each camera is grouped alone
+  ([0003](decisions/0003-camera-by-serial-group-per-camera.md)). Needs a two-camera wedding to measure.
+- **Grouping was reviewed only in part at the meeting** (3 cuts, 1 join, about ten groups
+  commented, Deo 3 not opened). The page stays ready: `cull.py meeting --output data\meeting`
+  ([spec](spec/labels.md#agency-meeting-page)). Do not score a grouping against
+  `meeting_answers.json` before [Q7](requirements.md#open-questions) is resolved.
+
 - **Phase 3: switch `ranking.py` to judging each photo alone.** Comparing frames in one request
   is position-biased with both the 4-bit and the full model (same winner in both orders 15 and 12
   of 53). Judging each photo alone and ranking in code is stable (eyes/focus/expression agree in
@@ -19,12 +61,10 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
   ([research](research/2026-11-15-report-prompt-both-orders.md)). Not in `ranking.py`. Decide
   (user): accept "tie = keep all" with this keep rate, or add a taste step for ties. To try:
   face crops for the eyes check, log-probabilities instead of the three answers.
-- **Ground truth for "best photo" (user, ~20 min on 4a). Blocks the step above.** The tool is
-  ready: `cull.py pick --output data\out-4a` (79 groups), rules on the page. Afterwards
-  `cull.py pick-score` for `ranking.json`, and the saved per-photo / describe-first answers in
-  `data/out-4a/` measured against the picks. Without it
-  `ranking.variant_similarity` (0.90 keeps 72 % of the wedding, 0.85 61 %, one winner per group
-  40 %; [research](research/2026-11-11-ranking-variants-dry-run.md)) and the prompt cannot be tuned.
+- **Ground truth for "best photo" (user, ~20 min on 4a).** Wait for the decision above: the picks
+  should record what the agency would deliver (often several photos), not one winner. Tool:
+  `cull.py pick --output data\out-4a` (79 groups); the agency's 23 groups are in
+  `picks.agency.json` (`pick-score --picks-file picks.agency.json --compare picks.json`).
 
 ## Next
 

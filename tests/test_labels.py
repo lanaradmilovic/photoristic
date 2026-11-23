@@ -203,6 +203,7 @@ def test_server_get_labels_and_static_files(server):
     assert _request(base + "/labels") == (200, [])
     with urllib.request.urlopen(base + "/report.html", timeout=5) as resp:
         assert resp.status == 200 and b"report" in resp.read()
+        assert resp.headers.get_all("Cache-Control") == ["no-store"]   # a rebuilt page is never shown from cache
 
 
 def test_server_post_writes_labels_json(server, tmp_path):

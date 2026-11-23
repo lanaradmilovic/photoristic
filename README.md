@@ -81,10 +81,11 @@ Then open `D:\cull\2024-06-15\report.html` in a browser.
 | `segments --output Y [--sheets]` | Cut the day into segments at shooting pauses → `segments.json`; `--sheets` writes `segments_sheets/`. |
 | `report --output Y` | Rebuild `report.html` from the existing JSON files. |
 | `label --output Y [--port 8765] [--no-browser]` | Serve the report on `127.0.0.1` and save ground-truth labels to `labels.json` ([labels](docs/spec/labels.md)). |
-| `score --output Y [--groups F [F]]` | Compare `labels.json` with `groups.json` (or the given files) and write `errors.jpg`. |
+| `score --output Y [--groups F [F]] [--labels FILE]` | Compare `labels.json` (or another labels file, e.g. the agency's `meeting_answers.json`) with `groups.json` (or the given files) and write `errors.jpg`. |
+| `meeting --output M` / `meeting-score --output M` | Feedback page for a meeting with the agency (disputed pairs, excerpts of the grouping, questions), built from `M/meeting.json`; summary of the answers ([labels](docs/spec/labels.md#agency-meeting-page)). |
 | `judge --output Y [--dry-run] [--include-faces-decided] [--max-pairs N]` | Grey-zone pairs for the VLM judge ([vlm-judge](docs/spec/vlm-judge.md)). Not part of `prepare`. |
 | `rank --output Y [--dry-run] [--max-requests N]` | Best photo(s) per group: keep / maybe in `ranking.json` and the report ([vlm-scoring](docs/spec/vlm-scoring.md)). Not part of `prepare`. |
-| `pick --output Y` / `pick-score --output Y` | Mark the best photo(s) per group in the browser; compare `ranking.json` with them ([labels](docs/spec/labels.md#best-photo-picks)). |
+| `pick --output Y [--sample F] [--picks-file N]` / `pick-score --output Y [--picks-file N] [--compare N]` | Mark the best photo(s) per group in the browser, with optional reasons and notes; compare `ranking.json` with them ([labels](docs/spec/labels.md#best-photo-picks)). |
 | `ping-vlm` | Check that the VLM server (`vlm` in the config) answers and serves the configured model. |
 
 Every command accepts `--config path\to\config.yaml` (default: `config.yaml` next to `cull.py`).
@@ -108,10 +109,11 @@ culling/grouping.py   grouping algorithm + groups.json
 culling/segments.py   day segments at shooting pauses + segments.json + segments_sheets/
 culling/report.py     report.html (group view + label mode)
 culling/labels.py     labels.json I/O, boundaries between adjacent photos, scoring, errors.jpg
-culling/labelserver.py local http server for `cull.py label` (GET/POST /labels)
+culling/labelserver.py local http server for `cull.py label`, `pick` and `meeting` (GET/POST /labels, /picks, /meeting)
 culling/vlm.py        VLM client: OpenAI-compatible chat completions over urllib, error mapping, ping
 culling/judge.py      VLM judge: pair selection, pair images, prompt + schema, judging loop with resume
 culling/picks.py      best-photo picks: picks.html, picks.json, comparison with ranking.json
+culling/meeting.py    agency meeting page: meeting.json -> meeting.html, meeting_answers.json, summary
 culling/ranking.py    best photo per group: variants, prompt + schema, safety rules, ranking loop with resume
 tests/                pytest, synthetic data only
 docs/                 plan, todo, log, decisions, spec, research, datasets (see CLAUDE.md)

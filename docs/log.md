@@ -87,3 +87,61 @@ link them here instead of copying.
   agreement decided in code. Consistent (identical pairs clean, synthetic blur and exposure found),
   but a winner in only 10 of 53 variants
   ([research](research/2026-11-15-report-prompt-both-orders.md)). `ranking.py` unchanged.
+
+## Session 10 — 2026-11-17
+- Plan for a feedback meeting with the agency on the grouping: they correct our groups instead of
+  labelling ([0023](decisions/0023-agency-corrects-our-groups.md)).
+- New `cull.py meeting` / `meeting-score` and `score --labels` (`culling/meeting.py`,
+  [spec](spec/labels.md#agency-meeting-page)); checked in headless Chrome on synthetic photos.
+- Draft `data/meeting/meeting.json` from metadata (20 disputed pairs of 5 kinds, 3 excerpts:
+  4a S01, Talici 1 S01, Talici 4 S05); the user still has to look at it. Branch `agency-meeting`.
+- 2026-11-18: pick page for the meeting: one-click reasons and a note per group, `--sample` (a
+  chosen few groups, short rules), `--picks-file` (the agency's own file), `pick-score --compare`
+  ([spec](spec/labels.md#best-photo-picks)). Draft `data/meeting/picks_sample.json`: 17 groups of
+  4a by kind of decision, from metadata, g0025 included at the user's request.
+- 2026-11-19: the sample can ask "would the other photo do?" (`ask` in the sample, `swap_ok` in the
+  picks). Asked on the four two-photo groups of 4a where no saved check of the model finds a
+  difference (g0020, g0040, g0044, g0139). Added from the saved answers of the model: g0008 (the
+  yawn the user picked against the model's `expression`), g0050 and g0075 (the model is sure:
+  stable in both orders, three models agree), g0146 (report and per-photo score disagree), g0126
+  (every frame "eyes closed", scores 9). g0060 is a contradiction, not a control: `sharpness` is
+  `B` in both orders, i.e. always the second photo shown. Sample: 23 groups, 78 photos. Label server sends `Cache-Control: no-store` (a rebuilt page was shown
+  from the browser cache).
+
+## Session 11 — 2026-11-20
+- Meeting with the agency held on 2026-11-19 (Peđa, Ksenija). Summary from the two transcripts and
+  the saved answers: [interview 3](interviews/2026-11-19-pedja-ksenija-grupisanje-i-izbor.md),
+  [numbers](research/2026-11-19-agency-meeting-answers.md). Main message: drop the bad and the
+  identical, do not pick one best; Peđa kept 59 of 78 photos. Grouping excerpts were not reviewed.
+- File-number gaps of Talici: at least 3,050 shot, 2,575 present, all five folders alike
+  ([research](research/2026-11-19-file-number-gaps.md)).
+
+## Session 12 — 2026-11-23
+- The user listened to the recording of the 2026-11-19 meeting again and dictated Peđa's comment
+  for every photo of the two pages. Written down as
+  [the photo-by-photo record](interviews/2026-11-19-pedja-slika-po-slika.md) (M1–M20, X1–X13,
+  P1–P23), checked against the saved answers and contact sheets of the photos. Her notes are
+  the hand-written transcript and the primary source; the automatic transcript only adds
+  detail and never overrides them (the differences are listed at the end of the record).
+- New [requirements.md](requirements.md): numbered rules for scope, groups, how many frames stay,
+  what is a bad frame, which frame to prefer, editing wishes; ten open questions with safe
+  defaults. Linked from `CLAUDE.md`.
+- Measured: DINOv2 similarity and the number of frames around a pair do not separate "one" from
+  "both"; his cuts and confirmed groups overlap in similarity; two of three cuts are look-back
+  joins ([research](research/2026-11-23-meeting-choices-vs-signals.md)).
+- Question page for Peđa: the meeting page got a third step type, `questions`, where two examples
+  that were answered differently stand side by side with what he said then
+  ([0024](decisions/0024-contradictions-side-by-side.md), [spec](spec/labels.md#agency-meeting-page)).
+  Eight questions in `data/questions/meeting.json`; checked in the Browser pane of the desktop app,
+  which opens localhost. `cull.py` now prints UTF-8 also when its output is piped (`meeting-score`
+  crashed on "č").
+- 2026-11-24: the user resolved three questions from the recording (guests: two stay two, many
+  are selected; "few" and "many" count the frames of one moment; all photos are Peđa's, Đole's
+  are not in the folders). [requirements.md](requirements.md#resolved) updated, the question page
+  is down to five questions.
+- How the program sees the two pairs of the "exactly the same" question: equal similarity, and
+  the right result for the second pair only by accident. A crop around the couple separates the
+  two pairs (patches 0.88 against 0.65) but not "one" from "both" over twenty pairs
+  ([research](research/2026-11-24-same-or-not-two-pairs.md)).
+- Decisions still to write: the group rule that replaces 0014 and the selection step
+  ([todo](todo.md)).

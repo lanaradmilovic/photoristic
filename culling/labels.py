@@ -65,6 +65,14 @@ def load_labels(out_dir):
         return normalise_labels(json.load(f))
 
 
+def read_labels_file(path):
+    """Labels from any file: a labels.json list, or a file with the labels under 'pairs'
+    (meeting_answers.json of `cull.py meeting`). Extra fields are dropped."""
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+    return normalise_labels(raw["pairs"] if isinstance(raw, dict) and "pairs" in raw else raw)
+
+
 def save_labels(out_dir, labels):
     path = Path(out_dir) / LABELS_FILE
     tmp = path.with_suffix(".tmp")
