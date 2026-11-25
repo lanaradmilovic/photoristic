@@ -7,19 +7,36 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
 
 - **Requirements are written down: [requirements.md](requirements.md)** (2026-11-23, from Peđa's
   comments photo by photo). Read it before the three items below.
-- **Show Peđa the question page (user).** `cull.py meeting --output data\questions`: five
-  questions for [Q1–Q3 and Q6](requirements.md#open-questions), the contradicting examples side
-  by side ([0024](decisions/0024-contradictions-side-by-side.md)). Look at the wording first; it
+- **Show Peđa the question page (user).** `cull.py meeting --output data\questions`: nine
+  questions. Five for [Q1–Q3 and Q6](requirements.md#open-questions), the contradicting examples
+  side by side ([0024](decisions/0024-contradictions-side-by-side.md)); four added 2026-11-25 for
+  [Q11–Q14](requirements.md#open-questions): where a moment ends (new pose seconds later, same
+  pose from another side, scenery) and when the program may drop a frame by itself. Look at the wording first; it
   is in `data/questions/meeting.json`. Afterwards `cull.py meeting-score --output data\questions`,
   then write the answers into requirements.md and close the questions. Q7 stays the user's (which
   `both` answers are really a different moment).
-- **New group rule (user decides). Replaces 0014.** A group is literally the same moment; a new
-  pose or action is a new group; orientation, black-and-white and a flash that did not fire do not
-  split ([G1–G8](requirements.md#groups)). Write the decision, redo the 4a and Talići 1 labels
-  ([0023](decisions/0023-agency-corrects-our-groups.md)), then measure with `cull.py score`. First
-  candidate: the look-back join for photos with people (two of his three cuts, 75–117 s apart);
-  a higher similarity threshold alone does not give his groups
-  ([research](research/2026-11-23-meeting-choices-vs-signals.md)).
+- **Grouping after the new labels: decide the direction (user).** The labels of 4a and Talići 1
+  follow [0025](decisions/0025-group-definition-v3.md) and the checks of
+  [0026](decisions/0026-labelling-checks.md). Measured 2026-11-25: the current grouping is as good
+  as the best rule of similarity and gap fitted on these labels (649 of 710, 310 of 333), and its
+  errors are the pairs the labellers disagreed on
+  ([research](research/2026-11-25-labels-v3-and-signal-ceiling.md)). Proposed, in this order:
+  1. Do not tune the similarity and gap thresholds further; keep the labels as a regression check.
+  2. Two levels: tight "same picture" sets (2 s apart at most, very similar), the only place where
+     the selection may drop a frame ([K2](requirements.md#how-many-frames-of-a-group-stay)), inside
+     looser "moment" groups used for the review page and for counting few or many (K7). A doubtful
+     boundary then cannot lose a photo. Asked on the question page (`sme-da-izbaci`). Needs a
+     decision record; it changes [0022](decisions/0022-variants-in-code-model-ranks.md).
+  3. Mark the taste-dependent pairs `unsure` in both label files so `cull.py score` counts real
+     mistakes (kinds of pairs: research, "Where the two of us disagreed").
+  4. Shorter look-back for photos with people (two of Peđa's three cuts, 75–117 s apart); measure
+     with `cull.py score` before and after, on branch `grouping-v3`.
+  5. Only if boundaries still have to improve: a signal for the arrangement of bodies (similarity
+     of a crop around the people, body keypoints), local on CPU.
+- **Check the agent's labels of Talići 1 to the end (user).** 392 pairs were labelled by the agent
+  from thumbnails; the user checked them once and disputed 14. Pairs worth a second look are
+  listed in the research file. Refresh the label page (Ctrl-F5) before clicking: it saves its own
+  copy of all labels.
 - **Decide what the selection step does (user). Blocks phase 3.** Input is now
   [K1–K12, B1–B6](requirements.md#how-many-frames-of-a-group-stay): bad frames out, exactly-same
   frames reduced to one, the rest kept; fewer only for ordinary moments with many frames. One
@@ -68,8 +85,6 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
 
 ## Next
 
-- **Check 4a and Talici 1 labels against the new group rule (user).** They were made 2026-11-10, partly under
-  the old "wide vs tight = separate" rule ([0013](decisions/0013-group-definition-v1.md)).
 - **Day segments: 4 missed cuts.** At 300 s four real part-of-day changes are not cut; pauses cannot
   separate them ([0017](decisions/0017-segments-gap-300s.md)). Needs content (VLM segment
   classification), not another threshold.

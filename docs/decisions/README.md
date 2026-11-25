@@ -25,7 +25,7 @@ Rules:
 | [0011](0011-unknown-face-does-not-stand-in.md) | An unknown face does not stand in for a known person | accepted | 2026-11-11 |
 | [0012](0012-no-face-size-filter.md) | Face-size filter for identity clustering | **rejected** | 2026-11-11 |
 | [0013](0013-group-definition-v1.md) | Group = interchangeable frames, wide vs tight separate | superseded by 0014 | 2026-10-19 |
-| [0014](0014-group-definition-v2.md) | Group = same main people, same moment, same place | accepted | 2026-11-11 |
+| [0014](0014-group-definition-v2.md) | Group = same main people, same moment, same place | superseded by 0025 | 2026-11-11 |
 | [0015](0015-labels-per-adjacent-boundary.md) | Labels on adjacent-photo boundaries, keyed by sha256 | accepted | 2026-10-22 |
 | [0016](0016-vlm-judge-grey-zone-only.md) | VLM judge only for the 0.80–0.90 grey zone | superseded by 0020 | 2026-10-23 |
 | [0017](0017-segments-gap-300s.md) | Day segments at pauses > 300 s | accepted | 2026-11-11 |
@@ -36,3 +36,5 @@ Rules:
 | [0022](0022-variants-in-code-model-ranks.md) | Code decides how many photos a group keeps; the model only ranks; no reject | accepted | 2026-11-11 |
 | [0023](0023-agency-corrects-our-groups.md) | The agency corrects our groups instead of labelling from scratch | accepted | 2026-11-17 |
 | [0024](0024-contradictions-side-by-side.md) | Contradicting answers are asked again as two examples side by side | proposed | 2026-11-23 |
+| [0025](0025-group-definition-v3.md) | Group = literally the same moment; a new pose taken on purpose is a new group | accepted | 2026-11-24 |
+| [0026](0026-labelling-checks.md) | Fixed checks for labelling a boundary (arrangement of bodies, 2 s, opposite side, scenery) | proposed | 2026-11-25 |

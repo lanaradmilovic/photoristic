@@ -1,6 +1,6 @@
 # 0014 — Group = same main people, same moment, same place
 
-- Status: accepted (supersedes [0013](0013-group-definition-v1.md))
+- Status: superseded by [0025](0025-group-definition-v3.md) (it superseded [0013](0013-group-definition-v1.md))
 - Date: 2026-11-11
 - Decided by: the user
 

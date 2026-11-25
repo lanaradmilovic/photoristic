@@ -14,8 +14,16 @@ re-grouping, re-ingesting and renamed output folders. A "same" run of three phot
 
 `labels.json`: `[{a_sha, b_sha, a_name, b_name, label: same|different|unsure, labeled_at}, …]`.
 
+Which label a boundary gets is decided by the fixed checks of
+[0026](../decisions/0026-labelling-checks.md).
+
 Known limitation: look-back joins (a photo returning to an earlier, non-adjacent group) cannot be
 labelled and are not scored.
+
+The label page keeps its own copy of all labels and POSTs the whole list on every click. After
+`labels.json` was changed outside the page, reload the page before clicking. Only one label
+server can use a port: a second `cull.py label` on the same port starts without an error on
+Windows while the first one keeps answering, so stop the old one first.
 
 ## Labelling
 

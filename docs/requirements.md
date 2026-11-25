@@ -148,6 +148,7 @@ Contradictions in the answers. "Ask" says who can resolve it.
 Q1–Q3 and Q6 are ready to be asked on one page (five questions): `cull.py meeting --output data\questions`
 ([spec](spec/labels.md#agency-meeting-page), [0024](decisions/0024-contradictions-side-by-side.md)).
 Q2 is asked as two questions there: pairs that are exactly the same, and long series of one moment.
+Q11–Q14 were added to the same page on 2026-11-25 (four more questions).
 
 **Q1 — A wider and a tighter (or a horizontal and a vertical) frame of the same pose: one or both?**
 - Both: M5 (couple at the tables; the wide one shows the table), M10 (family), M14 (groom, with and
@@ -204,6 +205,33 @@ Q2 is asked as two questions there: pairs that are exactly the same, and long se
 - P22: "two photos of the table → both", kept one of two.
 - Use the stated rule; it keeps more.
 
+**Q11 — A new pose a few seconds later: the same moment or a new picture?**
+- `G1`/`G2` say a new pose is a new group, `G5` keeps the look, the kiss and the smile (3 s)
+  together. Between them: a look and a near-kiss 4 s later, a hug and a wave 10 s later
+  (Talići 1 `7978`/`7979`, `8255`/`8256`). The labellers gave both answers
+  ([research](research/2026-11-25-labels-v3-and-signal-ceiling.md)).
+- Safe default: a new group when more than 2 s apart ([0026](decisions/0026-labelling-checks.md)).
+- Ask Peđa: question `nova-poza` on the question page.
+
+**Q12 — The same pose shot from another side: the same moment or a new picture?**
+- `G3` says framing and orientation are not the criterion; nothing was said about the photographer
+  walking around the subjects (4a `0072`/`0073`, Talići 1 `8059`/`8060`).
+- Safe default: a new group when the subjects are seen from the opposite side.
+- Ask Peđa: question `druga-strana`.
+
+**Q13 — Scenery from two spots: one subject or two pictures?**
+- `K9` and `G6` cover details of one object. For a house or a garden shot from two places
+  (Talići 1 `8516`/`8517`, `8705`/`8706`) the labellers gave both answers.
+- Safe default: a new group for another view.
+- Ask Peđa: question `prostor`.
+
+**Q14 — May the program drop a frame by itself only when frames are practically the same?**
+- Ours, from `C1`–`C3` and `K2`: the program removes bad frames and practically identical ones
+  (a burst), keeps every other similar frame and only shows them together. `K7` (many frames of
+  one moment, a few are enough) asks for more than that.
+- Safe default: drop only bad and practically identical frames.
+- Ask Peđa: question `sme-da-izbaci`.
+
 ### Resolved
 
 - **Q4 — Guests: one or all?** Resolved 2026-11-24 by the user from the recording: he said it was
@@ -222,10 +250,12 @@ Q2 is asked as two questions there: pairs that are exactly the same, and long se
 
 Ours; to be turned into decisions and todo items, not decided here.
 
-- **Group rule.** [0014](decisions/0014-group-definition-v2.md) says a new pose or expression stays
-  in the group; `G2` says a new pose is a new group. 0014 agrees with `G3` on framing and
-  orientation. A new decision has to replace 0014, and the labels of 4a and Talići 1 have to be
-  redone ([0023](decisions/0023-agency-corrects-our-groups.md)).
+- **Group rule.** Decided: [0025](decisions/0025-group-definition-v3.md) replaces 0014. A pose
+  taken on purpose starts a new group; one continuous action, a wider or tighter framing and a
+  vertical against a horizontal frame of the same moment stay one group. The labels of 4a and
+  Talići 1 were redone against it on 2026-11-25 ([0026](decisions/0026-labelling-checks.md)); the
+  current thresholds already score as well as similarity and gap can
+  ([research](research/2026-11-25-labels-v3-and-signal-ceiling.md)).
 - **"Stricter" is not only a higher similarity threshold.** Pairs he confirmed as one group have a
   DINOv2 similarity of 0.80–0.91, pairs he cut 0.73–0.82, and pairs he calls "the same" go down to
   0.65–0.71 (orientation, black-and-white against colour, details). Two of his three cuts are

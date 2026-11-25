@@ -7,17 +7,26 @@ Status: implemented (`culling/embed.py`, `culling/people.py`, `culling/faces.py`
 ## What a group is
 
 The rule every threshold, label and VLM answer is measured against
-([decision 0014](../decisions/0014-group-definition-v2.md)):
+([decision 0025](../decisions/0025-group-definition-v3.md)):
 
-- One group = the same main people in the same moment at the same place; the photographer keeps
-  the best frame of it. A wider or tighter framing, a new pose or expression, or a vertical versus
-  a horizontal frame stays in the same group.
+- One group = one moment: the photographer kept shooting the same thing. It is the set of frames
+  the selection is applied to, not "keep one of these".
+- The same group: frames of one continuous action in the same set-up (a change of expression,
+  gesture or step a second or two later); the same pose framed wider or tighter, or horizontal and
+  vertical; the same pose taken again after a short pause; black-and-white and colour; with flash
+  and without; details of the same object from different distances.
+- A new group: a new pose taken on purpose, or a new framing together with a new pose, also
+  seconds later with the same people at the same place; a return to the same people and place
+  later, in another pose.
 - Different people = a different group: a hug with another guest in the congratulation line, and
   also **a person added to or missing from a group photo** (bride with her parents vs. bride with
   her parents and grandmother). Both frames are kept; a photo with one person fewer is not a
   substitute for the full one.
 - A new activity or a new place = a different group.
 - Photos without people (decor, food, details) may group more loosely.
+
+The thresholds below were tuned against the earlier rule (0014), which kept a new pose in the
+group; tuning against 0025 is open ([todo](../todo.md)).
 
 Merging too much is worse than splitting too much: the VLM ranks *within* a group, so a wrongly
 merged moment risks losing its best frame to a different scene. When in doubt, split.

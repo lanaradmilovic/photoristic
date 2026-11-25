@@ -143,5 +143,32 @@ link them here instead of copying.
   the right result for the second pair only by accident. A crop around the couple separates the
   two pairs (patches 0.88 against 0.65) but not "one" from "both" over twenty pairs
   ([research](research/2026-11-24-same-or-not-two-pairs.md)).
-- Decisions still to write: the group rule that replaces 0014 and the selection step
-  ([todo](todo.md)).
+- Everything committed and pushed on `agency-meeting` (baaaa95).
+- New group rule decided by the user: [0025](decisions/0025-group-definition-v3.md) replaces 0014.
+  Labels prepared for re-checking: the `same` labels outside bursts were removed from `labels.json`
+  of 4a and Talići 1 (the old files are `labels.before-v3.json`), so the label tool stops only at
+  them.
+- Decision still to write: the selection step ([todo](todo.md)).
+
+## Session 13 — 2026-11-25
+
+- The user re-labelled 4a for [0025](decisions/0025-group-definition-v3.md); the agent reviewed all
+  333 pairs on contact sheets (7 changes accepted, 3 rejected). The agent then labelled the 392
+  open pairs of Talići 1 from thumbnails; the user disputed 14.
+- The agent's answers on the disputed pairs were not consistent (raised arm, kiss seconds later,
+  turned body, scenery). One list of checks was written and applied to every discussed pair:
+  [0026](decisions/0026-labelling-checks.md) (proposed).
+- Measured: the current grouping scores as well as the best similarity-and-gap rule fitted on the
+  new labels (649 of 710, 310 of 333); pairs 2 s apart or less are nearly always the same moment;
+  the errors are the kinds of pair the labellers disagreed on
+  ([research](research/2026-11-25-labels-v3-and-signal-ceiling.md)).
+- Proposed direction, not decided: no more threshold tuning, frames dropped only inside tight
+  "same picture" sets, taste-dependent pairs marked `unsure`, shorter look-back for photos with
+  people ([todo](todo.md)).
+- Question page: four questions added (`nova-poza`, `druga-strana`, `prostor`, `sme-da-izbaci`, each with two photo examples),
+  nine in all; [requirements Q11–Q14](requirements.md#open-questions). The definition as it was is
+  `data/questions/meeting.before-2026-11-25.json`. The page was validated with the page builder,
+  not opened in a browser.
+- Found: a second `cull.py label` on port 8765 starts without an error while the first server keeps
+  answering, so the browser showed the other album ([spec](spec/labels.md#what-a-label-is)).
+- Committed on `agency-meeting` and merged into `main` (fast-forward, 185 tests pass); not pushed.
