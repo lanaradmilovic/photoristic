@@ -22,15 +22,21 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
   errors are the pairs the labellers disagreed on
   ([research](research/2026-11-25-labels-v3-and-signal-ceiling.md)). Proposed, in this order:
   1. Do not tune the similarity and gap thresholds further; keep the labels as a regression check.
-  2. Two levels: tight "same picture" sets (2 s apart at most, very similar), the only place where
-     the selection may drop a frame ([K2](requirements.md#how-many-frames-of-a-group-stay)), inside
-     looser "moment" groups used for the review page and for counting few or many (K7). A doubtful
-     boundary then cannot lose a photo. Asked on the question page (`sme-da-izbaci`). Needs a
-     decision record; it changes [0022](decisions/0022-variants-in-code-model-ranks.md).
+  2. Two levels: tight "same picture" sets, the only place where the selection may prefer one
+     frame ([K2](requirements.md#how-many-frames-of-a-group-stay)), inside looser "moment" groups
+     used for the review page and for counting few or many (K7). The first half is done: the
+     variants of [0022](decisions/0022-variants-in-code-model-ranks.md) were already such sets
+     and are now limited to one burst (0027). Waiting for Peđa's answer to `sme-da-izbaci`:
+     whether the program also chooses among similar frames when there are many (K7), and what to
+     do in important moments, where he keeps every frame of a burst (K3).
   3. Mark the taste-dependent pairs `unsure` in both label files so `cull.py score` counts real
      mistakes (kinds of pairs: research, "Where the two of us disagreed").
-  4. Shorter look-back for photos with people (two of Peđa's three cuts, 75–117 s apart); measure
-     with `cull.py score` before and after, on branch `grouping-v3`.
+  4. Done 2026-11-25 on branch `grouping-v3`: same people return to an earlier group only at
+     0.82, and a variant is one burst of 2 s
+     ([0027](decisions/0027-lookback-and-burst-variants.md)). Still open from it: review and
+     merge the branch; run `cull.py rank` on 4a again (`ranking.json` is from the old variants);
+     look-back joins inside the ceremony still glue different steps (`0043` with `0057`) and no
+     label sees them (see "Labelling tool: look-back joins" below).
   5. Only if boundaries still have to improve: a signal for the arrangement of bodies (similarity
      of a crop around the people, body keypoints), local on CPU.
 - **Check the agent's labels of Talići 1 to the end (user).** 392 pairs were labelled by the agent

@@ -79,6 +79,23 @@ def test_a_photo_must_match_every_frame_of_the_variant():
     assert ids_by_variant(variants_of(s, groups_of([a, b, c]))) == [[a, b], [c]]
 
 
+def test_only_frames_of_one_burst_share_a_variant():
+    # Pedja P1: 0.95 but 5 s apart is not a burst; both frames stay (decision 0027).
+    s = Shoot()
+    a, b, c = s.add(0, A), s.add(1, near(0.97)), s.add(6, near(0.97))
+    groups = groups_of([a, b, c])
+    assert ids_by_variant(variants_of(s, groups)) == [[a, b], [c]]
+    assert ids_by_variant(variants_of(s, groups, variant_max_gap_seconds=0)) == [[a, b, c]]
+
+
+def test_a_burst_is_measured_from_its_last_frame():
+    # Nine frames in 4 s (the smoke kiss) are one burst although the first and the last
+    # are more than 2 s apart.
+    s = Shoot()
+    ids = [s.add(1.5 * k, near(0.97)) for k in range(4)]
+    assert ids_by_variant(variants_of(s, groups_of(ids))) == [ids]
+
+
 def test_orientation_splits_only_when_configured():
     s = Shoot()
     a, b = s.add(0, A), s.add(1, near(0.97))

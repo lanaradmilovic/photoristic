@@ -19,7 +19,10 @@ orders frames that code already considers interchangeable.
    - the same orientation (`ranking.variant_split_orientation`);
    - no difference in identified people (`ranking.variant_split_people`): a known identity in one
      frame and not in the other, the "person added to a group photo" case of
-     [0014](../decisions/0014-group-definition-v2.md).
+     [0014](../decisions/0014-group-definition-v2.md);
+   - within `ranking.variant_max_gap_seconds` of the variant's last frame (0 = no limit): only
+     frames of one burst replace each other
+     ([0027](../decisions/0027-lookback-and-burst-variants.md)).
 
    Among several compatible variants the one with the highest weakest similarity wins. Photos
    that are never compared (ingest error, `no_timestamp`, `preview_fallback`, no embedding, no

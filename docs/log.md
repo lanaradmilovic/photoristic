@@ -171,4 +171,13 @@ link them here instead of copying.
   not opened in a browser.
 - Found: a second `cull.py label` on port 8765 starts without an error while the first server keeps
   answering, so the browser showed the other album ([spec](spec/labels.md#what-a-label-is)).
-- Committed on `agency-meeting` and merged into `main` (fast-forward, 185 tests pass); not pushed.
+- Committed on `agency-meeting`, merged into `main` (fast-forward, 185 tests pass) and pushed (b8adef3).
+- Implemented what does not wait for Peđa's answers, on branch `grouping-v3`
+  ([0027](decisions/0027-lookback-and-burst-variants.md),
+  [research](research/2026-11-25-lookback-and-burst-variants.md)):
+  `faces_lookback_similarity_threshold` 0.70 → 0.82 (both look-back joins Peđa cut are gone, the one
+  he confirmed stays; labels 310 → 310 and 649 → 648) and the new `ranking.variant_max_gap_seconds`
+  2 s (of Peđa's 59 picked photos 11 instead of 20 cannot be `keep`; keeps 79 → 91 % on 4a,
+  68 → 83 % on Talići 1). A look-back window for photos with people was tried and dropped.
+  4a and Talići 1 were regrouped; the groups as they were are `groups.before-0027.json`.
+  `ranking.json` of 4a is from the old variants.

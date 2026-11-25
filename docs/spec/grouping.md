@@ -98,6 +98,9 @@ compared (neighbour, look-back, boundary refinement):
 - **same people** (identical sets, same face count): the relaxed `faces_*` rules apply as well —
   gap ≤ `faces_gap_seconds` and similarity ≥ `faces_similarity_threshold`, look-back at
   `faces_lookback_similarity_threshold`, drift guard at `faces_min_mean_similarity_to_group`.
+  The look-back value is well above the neighbour value on purpose: the same people back at the
+  same spot later with a low picture similarity are usually in a new pose, which is a new group
+  ([0027](../decisions/0027-lookback-and-burst-variants.md)).
 - **different people** (both have known identities, none in common): no join by the extended-gap,
   look-back or no-people rules. A burst (within `time_gap_seconds`) is never blocked: a face hidden
   in one frame is not a change of people.

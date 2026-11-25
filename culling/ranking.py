@@ -133,6 +133,9 @@ def split_variants(members, embeddings, signatures, cfg):
       - no difference in identified people (ranking.variant_split_people): a known person
         present in one photo and absent in the other. A head turned away also looks like
         that; the cost is one more `keep`, never a lost photo.
+    With ranking.variant_max_gap_seconds above 0 the photo must also follow the variant's
+    last photo within that many seconds: only frames of one burst are interchangeable
+    (decision 0027).
     Among several compatible variants the one with the highest weakest similarity wins.
     A variant longer than ranking.max_images is cut into consecutive parts of at most
     that size, each with its own winner. Returns the variants ordered by first photo.
@@ -152,10 +155,20 @@ def split_variants(members, embeddings, signatures, cfg):
             return None
         return sim
 
+    max_gap = float(cfg["variant_max_gap_seconds"])
+
+    def in_burst(photo, variant):
+        if max_gap <= 0 or not photo.get("capture_time") or not variant[-1].get("capture_time"):
+            return True
+        gap = datetime.fromisoformat(photo["capture_time"]) - datetime.fromisoformat(variant[-1]["capture_time"])
+        return abs(gap.total_seconds()) <= max_gap
+
     variants = []
     for photo in members:
         best, best_sim = None, None
         for variant in variants:
+            if not in_burst(photo, variant):
+                continue
             sims = [compatible(photo, other) for other in variant]
             if None not in sims and (best is None or min(sims) > best_sim):
                 best, best_sim = variant, min(sims)

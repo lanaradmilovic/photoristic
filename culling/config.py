@@ -61,7 +61,7 @@ DEFAULTS = {
         # DINOv2 similarity is low. Photos with no identity in common never join.
         "faces_gap_seconds": 60.0,
         "faces_similarity_threshold": 0.70,
-        "faces_lookback_similarity_threshold": 0.70,
+        "faces_lookback_similarity_threshold": 0.82,
         "faces_min_mean_similarity_to_group": 0.65,
         # Let an unidentified face stand in for a missing known person when deciding
         # "same people" ({A,B} vs {B}+1 unknown). Off: an unknown face could be the
@@ -106,6 +106,9 @@ DEFAULTS = {
         # Best photo per group (culling/ranking.py): code splits a group into variants of
         # near-duplicate frames, the VLM orders the frames of one variant.
         "variant_similarity": 0.90,
+        # A frame joins a variant only within this many seconds of the variant's last
+        # frame (0 = no limit): only frames of one burst may replace each other.
+        "variant_max_gap_seconds": 2.0,
         "variant_split_orientation": True,
         "variant_split_people": True,
         "max_images": 8,

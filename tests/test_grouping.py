@@ -365,23 +365,35 @@ def test_unknown_face_can_complete_the_couple_when_allowed():
     assert ids_per_group(groups) == [[a, b]] and "faces" in groups[0]["flags"]
 
 
-def test_same_people_merge_low_similarity_lookback_and_neighbour():
-    # Talici 1 shapes: 8033 -> 8049 at 0.72 after 94 s with other groups between
-    # (look-back); 8137 -> 8138 at 0.74 after 6 s (neighbour). Both show the couple.
+def test_same_people_merge_lower_similarity_lookback_and_neighbour():
+    # The couple returns after other groups at 0.84 (below the usual 0.90 look-back, above
+    # the same-people 0.82); the next frame follows at 0.80 after 6 s (Talici 1: 8137 -> 8138).
     s = Shoot()
     a1 = s.add(0, unit(0))
     o1 = s.add(30, unit(1))
     o2 = s.add(60, unit(2))
-    a2 = s.add(94, mix(unit(0), unit(3), 0.72))
-    a3 = s.add(100, mix(s.embeddings[s.photos[-1]["sha256"]], unit(4), 0.80))  # 0.80 to a2, 0.58 to a1
+    a2 = s.add(94, mix(unit(0), unit(3), 0.84))
+    a3 = s.add(100, mix(s.embeddings[s.photos[-1]["sha256"]], unit(4), 0.80))  # 0.80 to a2, 0.67 to a1
     couple = (["A", "B"], 2)
     ids = _identity_map(s, [couple, (["C"], 1), (["C"], 1), couple, couple])
     groups = group_photos(s.photos, s.embeddings, CFG, None, ids)
     assert ids_per_group(groups) == [[a1, a2, a3], [o1], [o2]]
     assert groups[0]["joined_by"] == ["lookback", "neighbour"]
     assert "faces" in groups[0]["flags"]
-    # Without identities the same numbers stay apart (0.72 < 0.90 look-back, 0.80 < 0.82).
+    # Without identities the same numbers stay apart (0.84 < 0.90 look-back, 0.80 < 0.82).
     assert ids_per_group(s.groups()) == [[a1], [o1], [o2], [a2], [a3]]
+
+
+def test_same_people_in_a_new_pose_do_not_return_to_the_earlier_group():
+    # Talici 1: 8020 -> 8029 at 0.73 after 117 s, the couple at the same spot in a new
+    # pose. Pedja cut that group (decision 0027).
+    s = Shoot()
+    a1 = s.add(0, unit(0))
+    o1 = s.add(40, unit(1))
+    a2 = s.add(117, mix(unit(0), unit(3), 0.73))
+    couple = (["A", "B"], 2)
+    ids = _identity_map(s, [couple, (["C"], 1), couple])
+    assert ids_per_group(group_photos(s.photos, s.embeddings, CFG, None, ids)) == [[a1], [o1], [a2]]
 
 
 def test_different_people_block_a_join_the_usual_rules_allow():

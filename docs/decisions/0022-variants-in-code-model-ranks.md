@@ -1,6 +1,6 @@
 # 0022 — Code decides how many photos a group keeps; the model only ranks; no reject
 
-- Status: accepted (narrows [0019](0019-safety-rules-in-code.md): the reject rules there are postponed)
+- Status: accepted (narrows [0019](0019-safety-rules-in-code.md): the reject rules there are postponed; variants limited to one burst by [0027](0027-lookback-and-burst-variants.md))
 - Date: 2026-11-11
 - Decided by: agent, approved by the user
 

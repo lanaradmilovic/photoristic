@@ -97,7 +97,11 @@ grouping:
   # Photos with identified people but no identity in common are never joined.
   faces_gap_seconds: 60.0
   faces_similarity_threshold: 0.70
-  faces_lookback_similarity_threshold: 0.70
+  # Returning to an earlier group needs 0.82 also for the same people (decision 0027):
+  # at 0.70 the couple back at the same spot in a NEW pose was joined (Pedja cut
+  # 8020|8029 at 0.73 / 117 s and 8028|8032 at 0.78 / 75 s); the return he confirmed
+  # (9789 -> 9796, the same pose a minute later) scores 0.86.
+  faces_lookback_similarity_threshold: 0.82
   faces_min_mean_similarity_to_group: 0.65
   # "Same people" normally needs identical sets of known identities. With true, a face
   # that could not be identified (a profile seen too rarely to become an identity) may
@@ -165,6 +169,11 @@ ranking:
   # compared. 0.90 is the people look-back threshold: below it DINOv2 does not tell a
   # different guest at the same spot from the same people.
   variant_similarity: 0.90
+  # A frame joins a variant only within this many seconds of the variant's last frame
+  # (0 = no limit): only frames of one burst may replace each other (decision 0027).
+  # Measured on Pedja's 23 groups: without the limit 20 of his 59 picked photos could not
+  # be `keep`, with 2 s 11; keeps rise from 79 % to 91 % on 4a and from 68 % to 83 % on Talici 1.
+  variant_max_gap_seconds: 2.0
   variant_split_orientation: true   # a vertical and a horizontal frame of one moment are both kept
   variant_split_people: true        # a known person in one frame and not in the other = separate variants
   max_images: 8                     # images per request; a longer variant is cut into parts, one keep each
