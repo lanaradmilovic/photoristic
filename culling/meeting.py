@@ -8,7 +8,9 @@ One local page, in Serbian, that leads through the meeting and saves every answe
      every pair of that excerpt they did not touch;
   3. questions: one question per screen with a few written answers. Where earlier answers
      contradict each other, the examples are shown next to each other ("sides"), each
-     with what was said then.
+     with what was said then. A side's optional `context` is every frame of that moment: the
+     page shows them as a small strip with their count and marks the side's photos in it, so
+     two frames are not judged without knowing how many there are.
 
 What is shown comes from `meeting.json` in the meeting folder, written by hand:
 
@@ -17,7 +19,8 @@ What is shown comes from `meeting.json` in the meeting folder, written by hand:
      "excerpts":  [{"out": "data/out-4a", "title": "Crkva", "first": "_KAD9796.NEF", "last": "_KAD9900.NEF"}],
      "questions": [{"id": "siri-uzi", "title": "Širi i uži kadar", "text": "…", "ask": "Šta program treba da zadrži?",
                     "sides": [{"out": "data/out-4a", "photos": ["_KAD9930.NEF", "_KAD9931.NEF"],
-                               "label": "Kod stolova", "said": "obe", "tone": "keep", "why": "…"}],
+                               "label": "Kod stolova", "said": "obe", "tone": "keep", "why": "…",
+                               "context": ["_KAD9926.NEF", "…", "_KAD9933.NEF"]}],
                     "options": [{"id": "obe", "text": "Uvek obe"}, {"id": "jedna", "text": "Uvek jednu"}]}]}
 
 `out` is an output folder of the pipeline (absolute, or relative to the working directory);
@@ -48,7 +51,7 @@ PAGE_FILE = "meeting.html"
 CASE_KEYS = {"out", "a", "b", "kind"}
 EXCERPT_KEYS = {"out", "title", "first", "last"}
 QUESTION_KEYS, QUESTION_OPTIONAL = {"id", "title", "ask", "options"}, {"text", "sides"}
-SIDE_KEYS, SIDE_OPTIONAL = {"out", "photos"}, {"label", "said", "why", "tone"}
+SIDE_KEYS, SIDE_OPTIONAL = {"out", "photos"}, {"label", "said", "why", "tone", "context"}
 TONES = ("keep", "cut")    # colour of a side's "said": kept more / kept fewer
 OTHER = "other"            # the answer the page adds to every question: something else, in the note
 DEFAULT_TITLE = "Pregled grupisanja"
@@ -82,13 +85,16 @@ def _check_question(q, i):
         raise ValueError(f"{where}: sides must be a list")
     for side in q.get("sides", []):
         if not isinstance(side, dict) or not SIDE_KEYS <= set(side) or set(side) - SIDE_KEYS - SIDE_OPTIONAL:
-            raise ValueError(f"{where}: a side needs out and photos; label, said, why and tone are optional")
+            raise ValueError(f"{where}: a side needs out and photos; label, said, why, tone and context are optional")
         if not _is_text(side["out"]) or not isinstance(side["photos"], list) or not side["photos"] \
                 or not all(_is_text(name) for name in side["photos"]):
             raise ValueError(f"{where}: a side needs an output folder and one or more photo names")
         if not all(isinstance(side.get(k, ""), str) for k in ("label", "said", "why")) \
                 or side.get("tone", TONES[0]) not in TONES:
             raise ValueError(f"{where}: label, said and why must be text, tone one of {', '.join(TONES)}")
+        context = side.get("context", [])
+        if not isinstance(context, list) or not all(_is_text(name) for name in context)                 or ("context" in side and not {n.lower() for n in side["photos"]} <= {n.lower() for n in context}):
+            raise ValueError(f"{where}: context must list photo names and include the side's photos")
 
 
 def load_definition(meeting_dir):
@@ -129,7 +135,7 @@ def _photo(p, folder):
 
 def build_page_data(definition):
     """{title, cases: [{out, kind, a, b}], excerpts: [{out, title, groups: [{group_id, photos}]}],
-    questions: [{id, title, text, ask, options, sides: [{out, label, said, why, tone, photos}]}],
+    questions: [{id, title, text, ask, options, sides: [{out, label, said, why, tone, photos, context}]}],
     folders: {out: folder name under previews/}}; a photo is {sha, name, preview, source}
     (`source` is its preview inside `out`). An excerpt is every group whose first photo was
     taken between `first` and `last` on the same camera, in the order of groups.json."""
@@ -186,7 +192,9 @@ def build_page_data(definition):
             photos = [named(side["out"], name) for name in side["photos"]]
             sides.append({"out": side["out"], "label": side.get("label", ""), "said": side.get("said", ""),
                           "why": side.get("why", ""), "tone": side.get("tone", ""),
-                          "photos": [_photo(p, folders[side["out"]]) for p in photos]})
+                          "photos": [_photo(p, folders[side["out"]]) for p in photos],
+                          "context": [_photo(named(side["out"], name), folders[side["out"]])
+                                      for name in side.get("context", [])]})
         questions.append({"id": q["id"], "title": q["title"], "text": q.get("text", ""), "ask": q["ask"],
                           "options": q["options"], "sides": sides})
     return {"title": definition["title"], "cases": cases, "excerpts": excerpts, "questions": questions,
@@ -212,7 +220,8 @@ def copy_previews(meeting_dir, data):
     meeting_dir, copied = Path(meeting_dir), 0
     photos = [(c["out"], c[side]) for c in data["cases"] for side in ("a", "b")]
     photos += [(x["out"], p) for x in data["excerpts"] for g in x["groups"] for p in g["photos"]]
-    photos += [(side["out"], p) for q in data["questions"] for side in q["sides"] for p in side["photos"]]
+    photos += [(side["out"], p) for q in data["questions"] for side in q["sides"]
+               for p in side["photos"] + side["context"]]
     for out, p in photos:
         src, dst = Path(out) / p["source"], meeting_dir / p["preview"]
         if not src.exists():
@@ -373,6 +382,10 @@ h1 { font-size:22px; margin:4px 0 6px; } .q { font-size:18px; margin:0 0 14px; m
 .shots img { max-width:calc((100% - (var(--n) - 1) * 6px) / var(--n)); max-height:30vh; border-radius:4px;
              cursor:zoom-in; }
 .shots.many img { max-height:15vh; }
+.context { margin:8px 0 0; color:var(--muted); }
+.context .strip { display:flex; flex-wrap:wrap; gap:3px; margin:4px 0 0; }
+.context img { height:44px; border-radius:2px; opacity:.55; cursor:zoom-in; outline:2px solid transparent; }
+.context img.asked { opacity:1; outline-color:var(--accent); }
 .said { margin:8px 0 0; } .said .tag { font-size:17px; margin-right:8px; }
 .tag { display:inline-block; padding:1px 11px; border-radius:999px; background:var(--muted); color:var(--card);
        font-weight:700; }
@@ -538,6 +551,18 @@ function render() {
         h += `<img src="${p.preview}" data-i="${bigList.length}" loading="lazy" alt="">`;
         bigList.push(p.preview);
       }
+      if (side.context.length) {
+        // The whole moment, small: two frames alone look different enough to keep both.
+        const asked = new Set(side.photos.map(p => p.sha)), n = side.context.length;
+        const word = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'slike' : 'slika';
+        h += `</div><div class="context">U albumu je ovaj trenutak <b>${n} ${word}</b>; ` +
+             `pitamo za označene:<div class="strip">`;
+        for (const p of side.context) {
+          h += `<img src="${p.preview}" data-i="${bigList.length}" loading="lazy" alt=""${asked.has(p.sha) ? ' class="asked"' : ''}>`;
+          bigList.push(p.preview);
+        }
+        h += `</div>`;
+      }
       if (side.said || side.why)
         h += `</div><div class="said">` + (side.said ? `Rekli ste: <span class="tag t-${esc(side.tone)}">${esc(side.said)}</span>` : '') +
              `<span class="muted">${esc(side.why)}</span>`;
@@ -615,7 +640,8 @@ def write_page(meeting_dir, data):
              "questions": [{"id": q["id"], "title": q["title"], "text": q["text"], "ask": q["ask"],
                             "options": q["options"],
                             "sides": [{"label": side["label"], "said": side["said"], "why": side["why"],
-                                       "tone": side["tone"], "photos": [photo(p) for p in side["photos"]]}
+                                       "tone": side["tone"], "photos": [photo(p) for p in side["photos"]],
+                                       "context": [photo(p) for p in side["context"]]}
                                       for side in q["sides"]]}
                            for q in data["questions"]]}
     payload = json.dumps(shown, ensure_ascii=False).replace("</", "<\\/")

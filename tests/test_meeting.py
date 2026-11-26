@@ -167,7 +167,8 @@ def test_question_errors_are_clear(tmp_path):
                 {**q, "options": q["options"][:1]}, {**q, "options": q["options"] * 2},
                 {**q, "options": q["options"] + [{"id": "other", "text": "x"}]},          # the page's own answer
                 {**q, "sides": [{"out": out, "photos": []}]}, {**q, "sides": [{"photos": [name(s, 0)]}]},
-                {**q, "sides": [{**q["sides"][0], "tone": "red"}]}):
+                {**q, "sides": [{**q["sides"][0], "tone": "red"}]},
+                {**q, "sides": [{**q["sides"][0], "context": [name(s, 0), name(s, 2)]}]}):  # misses name(s, 1)
         with pytest.raises(ValueError):
             define(m, {"questions": [bad]})
     with pytest.raises(ValueError):
@@ -196,3 +197,16 @@ def test_summary_lists_the_answers_to_questions(tmp_path):
     text = M.summary(answers, data)
     assert "questions: 1 of 2 answered" in text and "Širi i uži kadar: [other] Drugačije" in text
     assert "note: zavisi od stola" in text and "Gosti: -" in text and "disputed pairs" not in text
+
+
+def test_a_side_can_show_the_whole_moment_around_its_photos(tmp_path):
+    s, ids = wedding(tmp_path / "out")
+    out, m = str(tmp_path / "out"), tmp_path / "meeting"
+    q = question(s, out)
+    q["sides"][0]["context"] = [name(s, i) for i in range(4)]
+    data = M.build_page_data(define(m, {"questions": [q]}))
+    sides = data["questions"][0]["sides"]
+    assert [p["name"] for p in sides[0]["context"]] == [name(s, i) for i in range(4)] and sides[1]["context"] == []
+    assert M.copy_previews(m, data) == 5                      # 4 frames of the moment + the second side's one
+    page = M.write_page(m, data).read_text(encoding="utf-8")
+    assert '"context": [{' in page and "U albumu je ovaj trenutak" in page

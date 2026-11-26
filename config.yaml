@@ -177,3 +177,15 @@ ranking:
   variant_split_orientation: true   # a vertical and a horizontal frame of one moment are both kept
   variant_split_people: true        # a known person in one frame and not in the other = separate variants
   max_images: 8                     # images per request; a longer variant is cut into parts, one keep each
+
+agency:
+  # cull.py agency: folder of the agency's "after" package that holds the rejected photos.
+  rejected_folder: obrisano
+
+analysis:
+  # cull.py analysis: one wedding's before/after analysis (docs/spec/wedding-analysis.md).
+  # Keep these fixed: every wedding's summary.json is compared with the others, and a
+  # changed value makes the burst and rule numbers of older summaries incomparable.
+  burst_gap_seconds: 2.0      # neighbours of one camera at most this far apart ...
+  burst_similarity: 0.93      # ... and at least this similar (DINOv2) form a burst
+  cross_camera_seconds: 3.0   # "the main camera shot the same moment" = within this many seconds

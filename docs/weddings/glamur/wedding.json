@@ -1,0 +1,33 @@
+{
+ "wedding": "glamur",
+ "date": "2026-11-08",
+ "data": "<OneDrive>/Documents/Documents/photoristicxtajna/output/2026-11-26-glamur",
+ "editor": "Ksenija",
+ "program": "Photo Mechanic 5",
+ "before": "svadbe/1-glamur/pre (3,432 JPG, photographers already deleted ~1,150 frames)",
+ "after": "svadbe/1-glamur/posle (folders 1, 2, 3 kept; obrisano rejected)",
+ "reference_camera": "KNEZ",
+ "cameras": [
+  {"prefix": "KNEZ", "role": "main", "clock_offset_s": 0, "clock_checked": true, "note": "Canon R5 II, follows the couple"},
+  {"prefix": "LPZ_", "role": "second", "clock_offset_s": -298, "clock_checked": true, "note": "Nikon Z6 III"},
+  {"prefix": "JAS_", "role": "decor", "clock_offset_s": 68, "clock_checked": true, "note": "Nikon D750, decor, tables, guests"},
+  {"prefix": "VAL", "role": "guests", "clock_offset_s": 0, "clock_checked": false, "note": "Canon R6 II, guests at the logo wall"}
+ ],
+ "couple_identities": ["B", "C"],
+ "couple_checked": false,
+ "day_parts_source": "reviewers' strip notes, 2026-11-26; times on the KNEZ clock, approximate to a few minutes",
+ "day_parts": [
+  {"part": "prep", "start": "00:00", "end": "14:45", "note": "groom's home, house party, procession, bride's home"},
+  {"part": "church", "start": "14:45", "end": "15:27"},
+  {"part": "formals", "start": "15:27", "end": "15:37", "note": "posed family groups at the church"},
+  {"part": "couple", "start": "15:37", "end": "16:33", "cameras": ["KNEZ"], "note": "tower, stairs, gate"},
+  {"part": "arrival", "start": "15:37", "end": "17:35", "note": "guests arriving, logo wall, table portraits"},
+  {"part": "civil", "start": "17:35", "end": "17:49"},
+  {"part": "reception_line", "start": "17:49", "end": "18:27"},
+  {"part": "party", "start": "18:27", "end": "18:56"},
+  {"part": "first_dance", "start": "18:56", "end": "19:10"},
+  {"part": "party", "start": "19:10", "end": "21:58"},
+  {"part": "cake", "start": "21:58", "end": "22:15"},
+  {"part": "party", "start": "22:15", "end": "24:00"}
+ ]
+}

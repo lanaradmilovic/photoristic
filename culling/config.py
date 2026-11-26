@@ -113,6 +113,16 @@ DEFAULTS = {
         "variant_split_people": True,
         "max_images": 8,
     },
+    "agency": {
+        # `cull.py agency`: the folder of the agency's "after" package that holds rejected photos.
+        "rejected_folder": "obrisano",
+    },
+    "analysis": {
+        # `cull.py analysis`: fixed across weddings so their summaries compare (docs/spec/wedding-analysis.md).
+        "burst_gap_seconds": 2.0,
+        "burst_similarity": 0.93,
+        "cross_camera_seconds": 3.0,
+    },
 }
 
 

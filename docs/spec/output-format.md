@@ -25,6 +25,8 @@ can be re-run independently and the pipeline resumes after an interruption.
 | `judge_verdicts.json` | judge | the VLM's verdict per pair (written after every pair; resume state) and the comparison with `labels.json` |
 | `ranking.json` | rank | variants of every group, the VLM's order per variant (written after every request; resume state) and the decision per photo, see [vlm-scoring.md](vlm-scoring.md#rankingjson) |
 | `picks.html`, `picks.json` | pick | the best-photo picking page and the user's picks (ground truth for the ranking), see [labels.md](labels.md#best-photo-picks) |
+| `agency_cull.json` | agency | the agency's decision per photo, see [ingest.md](ingest.md) |
+| `analysis/reasons.jsonl`, `analysis/photos.csv` | reviewers, analysis | reasons for the agency's rejects; one row per photo, see [wedding-analysis.md](wedding-analysis.md) |
 | `cull.log` | all | file names, counts, timings and errors; never image content |
 
 Judge file schemas are in [vlm-judge.md](vlm-judge.md#files).

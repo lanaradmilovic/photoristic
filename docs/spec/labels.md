@@ -150,7 +150,8 @@ optional, one of them must be there:
  "questions": [{"id": "siri-uzi", "title": "Širi i uži kadar iste poze", "text": "…",
                 "ask": "Šta program treba da zadrži?",
                 "sides": [{"out": "data/out-4a", "photos": ["_KAD9930.NEF", "_KAD9931.NEF"],
-                           "label": "Mladenci kod stolova", "said": "obe", "tone": "keep", "why": "…"}],
+                           "label": "Mladenci kod stolova", "said": "obe", "tone": "keep", "why": "…",
+                           "context": ["_KAD9926.NEF", "…", "_KAD9933.NEF"]}],
                 "options": [{"id": "obe", "text": "Uvek obe"}, {"id": "jedna", "text": "Uvek jednu"}]}]}
 ```
 
@@ -178,6 +179,10 @@ keys, unknown file names and a pair shown twice are errors.
      shown as "Rekli ste:" with a tag, green for `tone: keep`, orange for `cut`) and the reason
      given then (`why`). Two sides stand next to each other as A and B; that is how answers that
      contradict each other are asked again.
+   - A side may list `context`: every frame of that moment in the album, including the side's
+     photos. The page shows them as a small strip under the side with the count ("U albumu je
+     ovaj trenutak N slika") and outlines the photos asked about, because two frames alone give
+     no sense of how many there are (asked for by the user on 2026-11-26).
    - A question without sides is just the question and its answers.
    - The last screen lists every question with the chosen answer and the note; a click goes back
      to it.

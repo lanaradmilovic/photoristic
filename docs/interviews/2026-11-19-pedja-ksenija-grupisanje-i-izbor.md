@@ -14,6 +14,8 @@ Sažetak je napravljen iz automatskog transkripta dva snimka i iz odgovora saču
 - deo razgovora o uspravnim i položenim slikama je izgubljen (greška transkripcije).
 
 Prethodni sastanci: [Mitar](2026-09-21-mitar.md), [Peđa, Mitar, Ksenija](2026-10-07-pedja-mitar-ksenija.md).
+Sledeći: [Mitar i Peđa, 2026-11-26](2026-11-26-mitar-pedja-samo-lose.md), gde je Mitar promenio
+zahteve (izbaci samo loše).
 
 **Precizniji zapis:** Lana je 2026-11-23 preslušala snimak i zapisala komentar za svaku sliku:
 [slika po slika](2026-11-19-pedja-slika-po-slika.md). Pravila izvedena iz toga su u

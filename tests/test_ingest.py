@@ -68,6 +68,18 @@ def test_scan_skips_macos_appledouble_files_and_output_folder(tmp_path):
     assert names == ["._odd.jpg", "_KAD0001.NEF"]
 
 
+def test_scan_skips_excluded_folder_names_at_any_depth(tmp_path):
+    for name in ["01/A_0001.JPG", "00 Nove Montaze/panorama copy.jpg", "02/00 nove montaze/x.jpg",
+                 "02/A_0002.JPG"]:
+        (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / name).write_bytes(b"x")
+    sources = scan_folder(tmp_path, exclude_names=["00 Nove Montaze"])
+    assert sorted(Path(s["jpg_path"]).name for s in sources) == ["A_0001.JPG", "A_0002.JPG"]
+    # The input folder itself may carry an excluded name: only folders inside it count.
+    inside = scan_folder(tmp_path / "00 Nove Montaze", exclude_names=["00 Nove Montaze"])
+    assert [Path(s["jpg_path"]).name for s in inside] == ["panorama copy.jpg"]
+
+
 def test_process_jpg_reads_metadata_and_applies_orientation(tmp_path):
     src = make_jpg(tmp_path / "in" / "DSC_0001.JPG", orientation=6)  # rotate 90° CW
     out = tmp_path / "out"

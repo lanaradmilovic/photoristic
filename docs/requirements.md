@@ -145,10 +145,31 @@ To be kept in mind when a rule above needs it:
 
 Contradictions in the answers. "Ask" says who can resolve it.
 
-Q1–Q3 and Q6 are ready to be asked on one page (five questions): `cull.py meeting --output data\questions`
-([spec](spec/labels.md#agency-meeting-page), [0024](decisions/0024-contradictions-side-by-side.md)).
-Q2 is asked as two questions there: pairs that are exactly the same, and long series of one moment.
-Q11–Q14 were added to the same page on 2026-11-25 (four more questions).
+**Answers from 2026-11-26** are in [interviews/2026-11-26-mitar-pedja-samo-lose.md](interviews/2026-11-26-mitar-pedja-samo-lose.md)
+(Serbian). Mitar's position there ("keep every good frame, drop only the bad") is recorded as his
+requirement, not yet as ours: the before/after culling albums the agency sent will be analysed
+first, and the requirements below change from that analysis.
+
+The question page for the meeting of 2026-11-26 (`cull.py meeting --output data\questions`,
+[spec](spec/labels.md#agency-meeting-page), [0024](decisions/0024-contradictions-side-by-side.md))
+was revised twice on 2026-11-26 and now has seventeen questions, Peđa's first. Every question that
+has a Talići example shows it. Asked:
+- Q2 and Q3 together as `granica-mladenci`: where is the line between one and both frames of the
+  couple (P1, M13 one; M2, P9 both);
+- `rodbina`: the same line for guests who may be family (P18, M10);
+- Q2 for important moments as `bitan-iste` (P2 three of five against P21 nine of nine);
+- Q14 as `mnogo-slika` (P6) and `visak`;
+- Q1 (`siri-uzi`), Q12 as `drugi-ugao` (Talići 1 `8059`/`8060`, 4a `0072`/`0073`), Q19
+  (`zatvorene-oci`);
+- Q6 as a proposal (`tamne`): this step only culls, so a recoverable dark frame is kept and marked
+  for the agency to brighten and then decide (M7, X10);
+- Q11 as `nova-poza` (Talići 1 `7978`/`7979`, `8255`/`8256`) and Q13 as `prostor` (Talići 1
+  `8516`/`8517`, `8705`/`8706`), added at the user's request;
+- Q15–Q18 and Q20.
+
+Not asked: `rafal`, `sme-da-izbaci`, and `fotosesija`, which is now part of `granica-mladenci`. The pages as they
+were: `data/questions/meeting.before-2026-11-25.json`, `meeting.before-2026-11-26.json`,
+`meeting.before-2026-11-26-v2.json`.
 
 **Q1 — A wider and a tighter (or a horizontal and a vertical) frame of the same pose: one or both?**
 - Both: M5 (couple at the tables; the wide one shows the table), M10 (family), M14 (groom, with and
@@ -169,7 +190,7 @@ Q11–Q14 were added to the same page on 2026-11-25 (four more questions).
 - Safe default: "the same" only when nothing about the main people differs; otherwise keep both.
   In an important moment (`K3`) keep both in any case.
 - How the program sees these two pairs: the similarity is 0.953 and 0.951, the same for it. It keeps one of P1 and both of M2, but only because a bystander's face was recognised on one frame of M2 and not on the other. On a crop around the couple the two pairs do separate (patch similarity 0.88 against 0.65), but over twenty pairs the crop does not separate his "one" from "both" ([research](research/2026-11-24-same-or-not-two-pairs.md)).
-- Ask Peđa with three or four such pairs side by side.
+- Asked 2026-11-26 as `granica-mladenci` (four pairs side by side) and `bitan-iste`.
 
 **Q3 — The bride or the couple alone in similar frames: one or both?**
 - One: M6 (bride in the old town, 30 s apart, head turned differently: "whichever, not that
@@ -211,26 +232,48 @@ Q11–Q14 were added to the same page on 2026-11-25 (four more questions).
   (Talići 1 `7978`/`7979`, `8255`/`8256`). The labellers gave both answers
   ([research](research/2026-11-25-labels-v3-and-signal-ceiling.md)).
 - Safe default: a new group when more than 2 s apart ([0026](decisions/0026-labelling-checks.md)).
-- Ask Peđa: question `nova-poza` on the question page.
+- Asked 2026-11-26 as `nova-poza`: would he choose one of the two, or are they two pictures?
 
 **Q12 — The same pose shot from another side: the same moment or a new picture?**
 - `G3` says framing and orientation are not the criterion; nothing was said about the photographer
   walking around the subjects (4a `0072`/`0073`, Talići 1 `8059`/`8060`).
 - Safe default: a new group when the subjects are seen from the opposite side.
-- Ask Peđa: question `druga-strana`.
+- Asked 2026-11-26 as `drugi-ugao`: both only because of the angle, or still one?
 
 **Q13 — Scenery from two spots: one subject or two pictures?**
 - `K9` and `G6` cover details of one object. For a house or a garden shot from two places
   (Talići 1 `8516`/`8517`, `8705`/`8706`) the labellers gave both answers.
 - Safe default: a new group for another view.
-- Ask Peđa: question `prostor`.
+- Asked 2026-11-26 as `prostor`: both views, or one is enough?
 
 **Q14 — May the program drop a frame by itself only when frames are practically the same?**
 - Ours, from `C1`–`C3` and `K2`: the program removes bad frames and practically identical ones
   (a burst), keeps every other similar frame and only shows them together. `K7` (many frames of
   one moment, a few are enough) asks for more than that.
 - Safe default: drop only bad and practically identical frames.
-- Ask Peđa: question `sme-da-izbaci`.
+- Asked as `visak` (where dropped frames go), because a frame moved aside can be brought back.
+
+**Q15 — Where do dropped frames go?** Folder, mark, or delete. Decides how risky a drop is and
+how phase 4 writes the result. Ask: `visak`.
+
+**Q16 — Which program does Ksenija cull in?** Decides the export (XMP for Lightroom, folders
+otherwise; [plan](plan.md#phase-4--export)). Ask: `program`.
+
+**Q17 — How many photos reach the couple?** The reduction target. Glamur (3,432 photos) is the
+example on the page; Mitar said in the first interview that the couple always get all photos.
+Ask: `koliko-ostane`.
+
+**Q18 — Is the list of important moments (`K3`) complete?** Ask: `bitni-momenti`.
+
+**Q19 — Closed eyes (`B1`): drop only when an open-eyes twin exists?** Safe default: never drop
+alone. Examples: 4a `9862`/`9863` (blink, he kept the second) and `0069`/`0070` (the groom looks
+down at the vows; the model reads it as closed eyes). Ask: `zatvorene-oci`.
+
+**Q20 — Data and cameras.** Glamur arrived 2026-11-26 as a whole wedding
+([datasets](datasets.md#glamur)); asked for its culled version (`glamur-posle`) and whether
+frames were deleted before hand-over (`glamur-brisano`: about 1,150 file numbers are missing).
+Talići was not asked: Peđa does not remember. Camera clocks differ by up to 6 minutes on Glamur;
+asked whether they can be set before the wedding (`sat`).
 
 ### Resolved
 

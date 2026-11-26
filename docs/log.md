@@ -181,3 +181,40 @@ link them here instead of copying.
   68 → 83 % on Talići 1). A look-back window for photos with people was tried and dropped.
   4a and Talići 1 were regrouped; the groups as they were are `groups.before-0027.json`.
   `ranking.json` of 4a is from the old variants.
+
+## 2026-11-26 — Glamur: the grouping measured on a four-camera JPG wedding
+
+- New dataset ([datasets](datasets.md#glamur)): 3,432 JPG, four cameras. `prepare` unchanged
+  thresholds, 80 min; new `--exclude FOLDER` for `prepare` / `ingest` skips the montage folder
+  ([spec](spec/ingest.md)). Branch `glamur-measurement` (from `grouping-v3`).
+- The agent labelled 1,904 boundaries in two blind passes (parallel agent passes, protocol in the
+  output folder). Score: 1,561 of 1,763 (88.5 %), 91 false merges, 111 missed, 141 unsure
+  ([research](research/2026-11-26-glamur-grouping.md)).
+- Found: the camera clocks differ by 68 s and 298 s; guest line-ups with the couple at one spot
+  are merged (one group of 56 photos holds about eleven line-ups); in-camera crops share the
+  capture time of their source; across cameras the same moment has low similarity.
+- For the user: review page of 120 pairs (`cull.py meeting --output <out>/review`), contact
+  sheets of 60 groups (`group_sheets/`).
+
+## 2026-11-26 — Glamur: what the agency's editor rejects
+
+- The agency gave Glamur before and after the cull (`svadbe/1-glamur/pre`, `posle`). The editor
+  works in Photo Mechanic 5 (colour class 1 = reject), camera by camera; 962 of 3,428 rejected.
+- Six agent reviewers gave a reason for every reject; whole-image quality does not separate kept
+  from rejected, face sharpness picks her frame at chance, and burst-thinning rules drop more of
+  her keeps than her rejects ([research](research/2026-11-26-glamur-cull.md)).
+- Local report with a gallery and the user's own marks: `<out>/posle-analiza/index.html`.
+
+## 2026-11-27 — One format for the before/after analyses of weddings
+
+- Every wedding the agency gives before and after the cull gets the same analysis, so agents can
+  compare them ([0028](decisions/0028-wedding-analysis-format.md), [spec](spec/wedding-analysis.md)):
+  `docs/weddings/<id>/` holds `wedding.json` (roles, clocks, parts of the day), `summary.json`
+  and `analysis.md` (numbered claims with evidence); `photos.csv` stays in the output folder.
+- New `cull.py analysis --output <out> --wedding docs/weddings/<id>`; config section `analysis`.
+- [Codebook](weddings/codebook.md) of reason codes with definitions and examples; version 2
+  splits `DUP` (`SAME`), hidden faces (`FACE`) and versions (`VERSION`).
+- Glamur repacked: [analysis](weddings/glamur/analysis.md), 15 claims; the numbers match the
+  research of 2026-11-26. New: by part of the day, the second photographer loses 54 % in the
+  first dance (main 22 %); keeping the first frame of a burst is less wrong (51 % of drops) than
+  keeping the sharpest face (61 %).

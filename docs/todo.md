@@ -7,12 +7,14 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
 
 - **Requirements are written down: [requirements.md](requirements.md)** (2026-11-23, from Peđa's
   comments photo by photo). Read it before the three items below.
-- **Show Peđa the question page (user).** `cull.py meeting --output data\questions`: nine
-  questions. Five for [Q1–Q3 and Q6](requirements.md#open-questions), the contradicting examples
-  side by side ([0024](decisions/0024-contradictions-side-by-side.md)); four added 2026-11-25 for
-  [Q11–Q14](requirements.md#open-questions): where a moment ends (new pose seconds later, same
-  pose from another side, scenery) and when the program may drop a frame by itself. Look at the wording first; it
-  is in `data/questions/meeting.json`. Afterwards `cull.py meeting-score --output data\questions`,
+- **Show Peđa the question page (user).** `cull.py meeting --output data\questions`: twelve
+  questions, revised 2026-11-26 for the selection step and shortened in Peđa's words: for
+  Ksenija (Glamur after culling, deleted frames, where dropped frames go, her program, how many
+  stay), then rules to confirm (important moments, photo session, important moment with nearly
+  identical frames, closed eyes, wide and tight, marking dark frames, camera clocks). What was
+  dropped and why: [open questions](requirements.md#open-questions). Wording in
+  `data/questions/meeting.json`.
+  Q11–Q13 (where a moment ends) are the user's to decide for the labels. Afterwards `cull.py meeting-score --output data\questions`,
   then write the answers into requirements.md and close the questions. Q7 stays the user's (which
   `both` answers are really a different moment).
 - **Grouping after the new labels: decide the direction (user).** The labels of 4a and Talići 1
@@ -61,10 +63,38 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
   least 3,050 are missing, so the pipeline has never seen plainly bad frames), and a wedding with
   the photos of both photographers: the Talići folders hold one camera only, so Đole's frames of
   that day are missing ([resolved Q10](requirements.md#resolved)).
-- **Group across cameras.** Main photographer and assistant shoot the same moment (wide and tight);
+- **Glamur before/after the agency's cull: talk it through (user).** The editor rejected 962 of
+  3,428 in Photo Mechanic; reasons are differences between twins (faces, occlusion, crew, flash),
+  every burst-thinning rule drops more of her keeps than her rejects
+  ([research](research/2026-11-26-glamur-cull.md)). Report with a gallery of all rejects and your
+  own marks: `<out>\posle-analiza\index.html` (open from disk). Next, if agreed: a score of
+  suggestions against her decisions; questions for Ksenija are at the end of the report.
+  The same in the fixed format for comparing weddings: [weddings/glamur](weddings/glamur/analysis.md)
+  (15 claims, status draft until you check them).
+- **Next before/after wedding: use the fixed format ([weddings](weddings/README.md#adding-a-wedding)).**
+  Codebook version 2, a second reviewer on about 10 % of the rejects, then `cull.py analysis`
+  and `analysis.md`; then the first comparison fills "holds elsewhere" of the Glamur claims.
+  Glamur's `DUP` (475) could be recoded with v2 to make the two comparable on faces.
+- **Check the agent's labels of Glamur (user, 120 pairs).**
+  `cull.py meeting --output "<OneDrive>\...\output\2026-11-26-glamur\review"`, then
+  `cull.py meeting-score` on the same folder: its last block lists where your answer differs from
+  `labels.json`. Shown: 21 of 91 false merges, 26 of 111 missed merges, 33 of 141 unsure (random,
+  the rest is in `review/not_shown.txt` and `errors.jpg`) and 40 random pairs where labels and
+  pipeline agree ([research](research/2026-11-26-glamur-grouping.md)).
+- **Guest line-ups are merged (found on Glamur).** Other guests with the couple at the same spot
+  10–36 s apart join one group (40 false merges; `g0318` is 56 photos of about eleven line-ups,
+  partly through look-back). Not tuned. Ask the agency first whether these printed photos go
+  through the tool at all ([S2](requirements.md#scope)); if they do, the selection must not pick
+  one frame from such a group. Also to decide: a tight frame (or in-camera crop) of some people of
+  a posed photo, same group or not (the checks of 0026 do not say; labelled `unsure`).
+- **Group across cameras.** Measured on Glamur: the clocks differ (LPZ +298 s, JAS -68 s against
+  KNEZ, VAL not measurable), so a clock offset per camera comes first; with corrected clocks 36 %
+  of photos have a partner within 2 s, about six in ten such pairs are the same moment, and the
+  one-camera similarity rule finds a third of those
+  ([research](research/2026-11-26-glamur-grouping.md#across-cameras)). Background: main photographer and assistant shoot the same moment (wide and tight);
   the agency wants both merged by capture time and chosen between
   ([S5](requirements.md#scope)). Now each camera is grouped alone
-  ([0003](decisions/0003-camera-by-serial-group-per-camera.md)). Needs a two-camera wedding to measure.
+  ([0003](decisions/0003-camera-by-serial-group-per-camera.md)). Next: a decision record for offset estimation and pairing of groups.
 - **Grouping was reviewed only in part at the meeting** (3 cuts, 1 join, about ten groups
   commented, Deo 3 not opened). The page stays ready: `cull.py meeting --output data\meeting`
   ([spec](spec/labels.md#agency-meeting-page)). Do not score a grouping against

@@ -39,3 +39,4 @@ Rules:
 | [0025](0025-group-definition-v3.md) | Group = literally the same moment; a new pose taken on purpose is a new group | accepted | 2026-11-24 |
 | [0026](0026-labelling-checks.md) | Fixed checks for labelling a boundary (arrangement of bodies, 2 s, opposite side, scenery) | proposed | 2026-11-25 |
 | [0027](0027-lookback-and-burst-variants.md) | Same people return to a group only at 0.82; a variant is one burst (2 s) | accepted | 2026-11-25 |
+| [0028](0028-wedding-analysis-format.md) | Every before/after wedding gets the same analysis: rows, summary, numbered claims | accepted | 2026-11-27 |

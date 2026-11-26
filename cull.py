@@ -1,7 +1,9 @@
 """Command line entry point.
 
-    python cull.py prepare --input <wedding folder> --output <output folder>
-    python cull.py ingest  --input <wedding folder> --output <output folder>
+    python cull.py prepare --input <wedding folder> --output <output folder> [--exclude FOLDER ...]
+    python cull.py agency  --input <wedding folder> --output <output folder> [--rejected obrisano.txt | --after <agency folder>] [--keep-originals]
+                                                        # prepare, read the agency's cull, then DELETE the originals
+    python cull.py ingest  --input <wedding folder> --output <output folder> [--exclude FOLDER ...]
     python cull.py group   --output <output folder>     # re-group after changing thresholds
     python cull.py faces   --output <output folder> [--sheets]   # face identities only
     python cull.py segments --output <output folder> [--sheets]  # day segments (segments.json)
@@ -53,7 +55,7 @@ def setup_logging(out_dir):
 
 def cmd_ingest(args, config):
     from culling.ingest import run_ingest
-    return run_ingest(args.input, args.output, config)
+    return run_ingest(args.input, args.output, config, exclude_names=args.exclude)
 
 
 def _load_photos_or_exit(args):
@@ -150,6 +152,44 @@ def cmd_report(args, config, photos=None, identities=None):
 def cmd_prepare(args, config):
     photos = cmd_ingest(args, config)
     cmd_group(args, config, photos)
+
+
+def cmd_agency(args, config):
+    """prepare, read the agency's cull (if given), then delete the originals that are no longer needed."""
+    from culling.agency import delete_originals, import_cull
+    from culling.grouping import load_groups
+    from culling.ingest import DELETED_MARKER
+
+    if args.rejected and args.after:
+        sys.exit("Give either --rejected or --after, not both.")
+    if (args.output / DELETED_MARKER).exists():
+        log.info("Originals were deleted earlier (%s): skipping prepare", args.output / DELETED_MARKER)
+        photos = _load_photos_or_exit(args)
+    else:
+        photos = cmd_ingest(args, config)
+        cmd_group(args, config, photos)
+    after_files, cull = [], None
+    if args.rejected or args.after:
+        cull, after_files = import_cull(args.output, config, rejected_list=args.rejected,
+                                       after_dir=args.after, exclude_names=args.exclude)
+    if args.keep_originals:
+        log.info("--keep-originals: nothing deleted")
+        return
+    delete_originals(args.output, args.input, photos, load_groups(args.output), after_files, cull)
+
+
+def cmd_analysis(args, config):
+    """photos.csv and summary.json of one wedding's before/after analysis."""
+    from culling.analysis import run_analysis
+
+    try:
+        summary = run_analysis(args.output, args.wedding, config)
+    except (OSError, ValueError) as e:
+        sys.exit(str(e))
+    c = summary["counts"]
+    print(f"{summary['wedding']}: {c['photos']} photos, {c['rejected']} rejected "
+          f"({summary['reject_rate']}), reasons for {summary['reasons']['reviewed']}")
+    return summary
 
 
 def cmd_label(args, config):
@@ -369,12 +409,23 @@ def main():
         p = sub.add_parser(name, help=help_text)
         if needs_input:
             p.add_argument("--input", required=True, type=Path, help="wedding folder with NEF/JPG files")
+            p.add_argument("--exclude", nargs="+", default=[], metavar="FOLDER",
+                           help="folder names inside the input that hold no photos of the day "
+                                "(montages, exports); skipped at any depth")
         if needs_output:
             p.add_argument("--output", required=True, type=Path, help="output folder for this wedding")
         p.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="config YAML")
         return p
 
     add("prepare", "ingest + embeddings + grouping + HTML report", True)
+    agency = add("agency", "prepare + the agency's cull (agency_cull.json) + delete the originals once "
+                           "every photo has its preview and group (list in originals_deleted.txt)", True)
+    agency.add_argument("--rejected", type=Path, default=None, metavar="FILE",
+                        help="text file with the rejected file names, one per line (dir /b > obrisano.txt)")
+    agency.add_argument("--after", type=Path, default=None, metavar="FOLDER",
+                        help="the agency's culled package; rejected photos are in the folder "
+                             "agency.rejected_folder (obrisano); its photo files are deleted too")
+    agency.add_argument("--keep-originals", action="store_true", help="do not delete anything")
     add("ingest", "extract previews and metadata only", True)
     add("group", "embeddings + people + faces + grouping + report from an existing ingest", False)
     faces = add("faces", "face detection + identity clustering only (identities.json)", False)
@@ -427,6 +478,10 @@ def main():
                             help="picks file in the output folder (default picks.json)")
     pick_score.add_argument("--compare", default=None, metavar="NAME",
                             help="another picks file in the output folder: how often both chose the same")
+    analysis = add("analysis", "one wedding's before/after analysis: <output>/analysis/photos.csv and "
+                               "summary.json next to wedding.json (docs/spec/wedding-analysis.md)", False)
+    analysis.add_argument("--wedding", required=True, type=Path, metavar="FOLDER",
+                          help="folder with wedding.json, e.g. docs/weddings/glamur")
     add("ping-vlm", "check that the VLM server (config vlm) answers and serves the model", False,
         needs_output=False)
     args = parser.parse_args()
@@ -435,7 +490,7 @@ def main():
     setup_logging(getattr(args, "output", None))
     log.info("Command: %s (config %s)", args.command, args.config)
     started = time.time()
-    commands = {"prepare": cmd_prepare, "ingest": cmd_ingest, "group": cmd_group,
+    commands = {"prepare": cmd_prepare, "agency": cmd_agency, "analysis": cmd_analysis, "ingest": cmd_ingest, "group": cmd_group,
                 "faces": cmd_faces, "segments": cmd_segments, "report": cmd_report, "label": cmd_label, "score": cmd_score,
                 "judge": cmd_judge, "rank": cmd_rank, "pick": cmd_pick, "pick-score": cmd_pick_score, "ping-vlm": cmd_ping_vlm,
                 "meeting": cmd_meeting, "meeting-score": cmd_meeting_score}

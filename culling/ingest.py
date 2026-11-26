@@ -37,6 +37,8 @@ JPG_EXTS = {".jpg", ".jpeg"}
 PHOTOS_FILE = "photos.json"
 PREVIEW_DIR = "previews"
 THUMB_DIR = "thumbs"
+# Written by `cull.py agency` when it deletes the originals; ingest must not run after that.
+DELETED_MARKER = "originals_deleted.txt"
 
 # PIL transpose operations for EXIF orientation values 2..8.
 ORIENTATION_OPS = {
@@ -64,16 +66,20 @@ def is_appledouble(path):
         return f.read(4) == APPLEDOUBLE_MAGIC
 
 
-def scan_folder(input_dir, exclude_dir=None):
+def scan_folder(input_dir, exclude_dir=None, exclude_names=()):
     """Find NEF/JPG files recursively and pair them by (folder, lowercase stem).
 
     `exclude_dir` (the output folder) is skipped in case it lies inside the input.
+    `exclude_names` are folder names inside the input whose files are not photos of the
+    day (montages, exports); they are skipped at any depth, compared without case.
     Returns a list of sources: {"nef_path": str|None, "jpg_path": str|None}.
     """
     input_dir = Path(input_dir)
     exclude_dir = Path(exclude_dir).resolve() if exclude_dir else None
+    exclude_names = {name.lower() for name in exclude_names}
     pairs = defaultdict(dict)
     n_appledouble = 0
+    n_excluded = defaultdict(int)
     for path in sorted(input_dir.rglob("*")):
         if not path.is_file():
             continue
@@ -85,6 +91,10 @@ def scan_folder(input_dir, exclude_dir=None):
         else:
             continue
         if exclude_dir and exclude_dir in path.resolve().parents:
+            continue
+        skipped = [part for part in path.relative_to(input_dir).parts[:-1] if part.lower() in exclude_names]
+        if skipped:
+            n_excluded[skipped[0]] += 1
             continue
         if is_appledouble(path):
             n_appledouble += 1
@@ -98,6 +108,10 @@ def scan_folder(input_dir, exclude_dir=None):
         pairs[key][kind] = str(path)
     if n_appledouble:
         log.info("Skipped %d macOS '._' metadata files (not photos)", n_appledouble)
+    for name, n in sorted(n_excluded.items()):
+        log.info("Skipped %d files in the excluded folder '%s'", n, name)
+    for name in sorted(exclude_names - {n.lower() for n in n_excluded}):
+        log.warning("Excluded folder '%s' has no NEF/JPG files in %s - check the name", name, input_dir)
     return [
         {"nef_path": p.get("nef_path"), "jpg_path": p.get("jpg_path")}
         for _, p in sorted(pairs.items())
@@ -330,15 +344,19 @@ def assign_unique_ids(photos):
     return photos
 
 
-def run_ingest(input_dir, out_dir, config):
+def run_ingest(input_dir, out_dir, config, exclude_names=()):
     input_dir, out_dir = Path(input_dir), Path(out_dir)
     if not input_dir.is_dir():
         raise FileNotFoundError(f"Input folder not found: {input_dir}")
+    if (out_dir / DELETED_MARKER).exists():
+        raise RuntimeError(f"The originals of this wedding were deleted ({out_dir / DELETED_MARKER}); "
+                           "ingest would drop every photo whose file is gone. Use 'group' or 'report' "
+                           "on the existing output instead.")
     (out_dir / PREVIEW_DIR).mkdir(parents=True, exist_ok=True)
     (out_dir / THUMB_DIR).mkdir(parents=True, exist_ok=True)
     ingest_cfg = config["ingest"]
 
-    sources = scan_folder(input_dir, exclude_dir=out_dir)
+    sources = scan_folder(input_dir, exclude_dir=out_dir, exclude_names=exclude_names)
     n_nef = sum(1 for s in sources if s["nef_path"])
     n_jpg = sum(1 for s in sources if s["jpg_path"])
     n_pairs = sum(1 for s in sources if s["nef_path"] and s["jpg_path"])

@@ -74,8 +74,10 @@ Then open `D:\cull\2024-06-15\report.html` in a browser.
 
 | Command | What it does |
 |---|---|
-| `prepare --input X --output Y` | Ingest → embeddings → grouping → report. Safe to re-run: unchanged files are not re-processed. |
-| `ingest --input X --output Y` | Step 1 only. |
+| `prepare --input X --output Y [--exclude FOLDER ...]` | Ingest → embeddings → grouping → report. Safe to re-run: unchanged files are not re-processed. `--exclude` skips folders inside X that hold no photos of the day (montages, exports). |
+| `agency --input X --output Y [--exclude ...] [--rejected F \| --after D] [--keep-originals]` | For a wedding from the agency: `prepare`, then their cull from a list of rejected names (`dir /b > obrisano.txt`) or their culled folder → `agency_cull.json`, then **deletes the originals** (and the copies in D) of every photo that has its preview and group; the list is `originals_deleted.txt`, and ingest refuses to run after that ([spec](docs/spec/ingest.md#agency-packages)). |
+| `analysis --output Y --wedding docs/weddings/<id>` | One wedding before and after the agency's cull, in the fixed format for comparing weddings: `Y/analysis/photos.csv` and `summary.json` next to `wedding.json` ([spec](docs/spec/wedding-analysis.md)). Needs `agency_cull.json`. |
+| `ingest --input X --output Y [--exclude FOLDER ...]` | Step 1 only. |
 | `group --output Y` | Embeddings, people, faces (all cached) → grouping → segments → report. Use it after changing thresholds. |
 | `faces --output Y [--sheets]` | Face detection + identity clustering only; `--sheets` writes `faces_sheets/` for review. |
 | `segments --output Y [--sheets]` | Cut the day into segments at shooting pauses → `segments.json`; `--sheets` writes `segments_sheets/`. |
@@ -102,6 +104,8 @@ config.yaml           all tunables
 culling/config.py     defaults + YAML loading (unknown keys are errors)
 culling/metadata.py   EXIF via exifread
 culling/ingest.py     scan, pair, hash, previews, photos.json, resume
+culling/agency.py     the agency's cull (agency_cull.json), deleting originals after prepare
+culling/analysis.py   before/after analysis of one wedding: photos.csv, summary.json
 culling/embed.py      DINOv2 embeddings + cache
 culling/people.py     person detection (RT-DETR) + cache
 culling/faces.py      face detection (SCRFD), alignment, ArcFace embeddings, identity clustering

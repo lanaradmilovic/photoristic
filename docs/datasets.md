@@ -21,3 +21,27 @@ is checked at least on **Talici 1 (over-splitting) and 4a (wrong merges)**, idea
 Regenerate: `.venv\Scripts\python cull.py prepare --input "<folder>" --output "<out>"`
 (~2 min for 4a, ~8–10 min per 700 photos on CPU). Re-group only: `cull.py group --output <out>`.
 Use `.venv\Scripts\python.exe`; the system Python has no `rawpy`.
+
+## Glamur
+
+One wedding, 8 Nov 2026, four cameras, JPG only, 3,432 photos. Not part of the regression set;
+measured once without tuning ([research](research/2026-11-26-glamur-grouping.md)).
+
+- Source: `<OneDrive>/Documents/Documents/photoristicxtajna/svadbe/1-glamur/pre/08.11. Glamur/` (moved
+  there 2026-11-26; `photos.json` still names the old path `photoristicxtajna/08.11. Glamur/`) (folders 01–29,
+  `POSLEDNJA KARTICA`, `Luka mejl` are card dumps; `00 Nove Montaze` holds Photoshop montages).
+- Output: `<OneDrive>/Documents/Documents/photoristicxtajna/output/2026-11-26-glamur/`
+- Regenerate (80 min on CPU):
+  `.venv\Scripts\python cull.py prepare --input "<source>" --output "<out>" --exclude "00 Nove Montaze"`
+- Cameras by file prefix: `KNEZ` Canon R5 II (1,852), `LPZ_` Nikon Z6 III (874), `JAS_` Nikon D750
+  (539), `VAL` Canon R6 II (167). Their clocks differ: LPZ is 298 s ahead of KNEZ, JAS 68 s
+  behind; VAL unknown.
+- **Labelled** by the agent for rule 0025: 1,904 pairs (all 1,704 of 2–40 s, 100 sampled under
+  2 s, 100 over 40 s), 141 of them `unsure`. Score 1,561 of 1,763. The user's check of 120 pairs
+  is `review/` in the output folder.
+- **The agency's cull** is `svadbe/1-glamur/posle/08.11. Glamur/`: kept photos in `1` (KNEZ), `2`
+  (LPZ), `3` (JAS, VAL), rejects in `obrisano`, marked in Photo Mechanic
+  ([research](research/2026-11-26-glamur-cull.md)). Analysis and report: `posle-analiza/` in the output folder;
+  in the fixed format: [weddings/glamur](weddings/glamur/analysis.md), rows in `analysis/photos.csv`.
+- Also in the output folder: `labelling/` (sheets, protocol, answers), `group_sheets/`, `clocks/`,
+  `cross_camera/`, `scripts/`.
