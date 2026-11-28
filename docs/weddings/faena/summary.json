@@ -1,0 +1,447 @@
+{
+ "schema": 1,
+ "wedding": "faena",
+ "created": "2026-11-28T01:28:00",
+ "cull_source": "03.10. Faena",
+ "params": {
+  "burst_gap_seconds": 2.0,
+  "burst_similarity": 0.93,
+  "cross_camera_seconds": 3.0
+ },
+ "counts": {
+  "photos": 3822,
+  "kept": 2531,
+  "rejected": 1291,
+  "both": 0,
+  "missing": 0,
+  "ambiguous": 0,
+  "unknown": 0
+ },
+ "reject_rate": 0.338,
+ "by_role": {
+  "decor": {
+   "photos": 582,
+   "rejected": 127,
+   "rate": 0.218
+  },
+  "guests": {
+   "photos": 125,
+   "rejected": 8,
+   "rate": 0.064
+  },
+  "main": {
+   "photos": 1948,
+   "rejected": 884,
+   "rate": 0.454
+  },
+  "second": {
+   "photos": 1167,
+   "rejected": 272,
+   "rate": 0.233
+  }
+ },
+ "by_day_part": {
+  "arrival": {
+   "photos": 400,
+   "rejected": 45,
+   "rate": 0.113
+  },
+  "cake": {
+   "photos": 183,
+   "rejected": 70,
+   "rate": 0.383
+  },
+  "church": {
+   "photos": 519,
+   "rejected": 203,
+   "rate": 0.391
+  },
+  "civil": {
+   "photos": 153,
+   "rejected": 66,
+   "rate": 0.431
+  },
+  "couple": {
+   "photos": 222,
+   "rejected": 105,
+   "rate": 0.473
+  },
+  "first_dance": {
+   "photos": 263,
+   "rejected": 96,
+   "rate": 0.365
+  },
+  "formals": {
+   "photos": 178,
+   "rejected": 63,
+   "rate": 0.354
+  },
+  "party": {
+   "photos": 376,
+   "rejected": 113,
+   "rate": 0.301
+  },
+  "prep": {
+   "photos": 876,
+   "rejected": 353,
+   "rate": 0.403
+  },
+  "reception_line": {
+   "photos": 652,
+   "rejected": 177,
+   "rate": 0.271
+  }
+ },
+ "by_role_day_part": {
+  "decor/arrival": {
+   "photos": 170,
+   "rejected": 18,
+   "rate": 0.106
+  },
+  "decor/cake": {
+   "photos": 69,
+   "rejected": 27,
+   "rate": 0.391
+  },
+  "decor/church": {
+   "photos": 87,
+   "rejected": 13,
+   "rate": 0.149
+  },
+  "decor/civil": {
+   "photos": 22,
+   "rejected": 7,
+   "rate": 0.318
+  },
+  "decor/first_dance": {
+   "photos": 51,
+   "rejected": 13,
+   "rate": 0.255
+  },
+  "decor/party": {
+   "photos": 132,
+   "rejected": 41,
+   "rate": 0.311
+  },
+  "decor/reception_line": {
+   "photos": 51,
+   "rejected": 8,
+   "rate": 0.157
+  },
+  "guests/arrival": {
+   "photos": 125,
+   "rejected": 8,
+   "rate": 0.064
+  },
+  "main/arrival": {
+   "photos": 4,
+   "rejected": 2,
+   "rate": 0.5
+  },
+  "main/cake": {
+   "photos": 114,
+   "rejected": 43,
+   "rate": 0.377
+  },
+  "main/church": {
+   "photos": 316,
+   "rejected": 165,
+   "rate": 0.522
+  },
+  "main/civil": {
+   "photos": 86,
+   "rejected": 42,
+   "rate": 0.488
+  },
+  "main/couple": {
+   "photos": 222,
+   "rejected": 105,
+   "rate": 0.473
+  },
+  "main/first_dance": {
+   "photos": 128,
+   "rejected": 63,
+   "rate": 0.492
+  },
+  "main/formals": {
+   "photos": 65,
+   "rejected": 35,
+   "rate": 0.538
+  },
+  "main/party": {
+   "photos": 121,
+   "rejected": 37,
+   "rate": 0.306
+  },
+  "main/prep": {
+   "photos": 524,
+   "rejected": 240,
+   "rate": 0.458
+  },
+  "main/reception_line": {
+   "photos": 368,
+   "rejected": 152,
+   "rate": 0.413
+  },
+  "second/arrival": {
+   "photos": 101,
+   "rejected": 17,
+   "rate": 0.168
+  },
+  "second/church": {
+   "photos": 116,
+   "rejected": 25,
+   "rate": 0.216
+  },
+  "second/civil": {
+   "photos": 45,
+   "rejected": 17,
+   "rate": 0.378
+  },
+  "second/first_dance": {
+   "photos": 84,
+   "rejected": 20,
+   "rate": 0.238
+  },
+  "second/formals": {
+   "photos": 113,
+   "rejected": 28,
+   "rate": 0.248
+  },
+  "second/party": {
+   "photos": 123,
+   "rejected": 35,
+   "rate": 0.285
+  },
+  "second/prep": {
+   "photos": 352,
+   "rejected": 113,
+   "rate": 0.321
+  },
+  "second/reception_line": {
+   "photos": 233,
+   "rejected": 17,
+   "rate": 0.073
+  }
+ },
+ "near_identical_pairs": {
+  "pairs": 980,
+  "both_kept": 176,
+  "one_rejected": 689,
+  "both_rejected": 115,
+  "both_kept_share": 0.18
+ },
+ "bursts_by_size": {
+  "2": {
+   "bursts": 449,
+   "frames": 898,
+   "kept_share": 0.521,
+   "none_kept": 55
+  },
+  "3-4": {
+   "bursts": 158,
+   "frames": 566,
+   "kept_share": 0.532,
+   "none_kept": 6
+  },
+  "5+": {
+   "bursts": 25,
+   "frames": 148,
+   "kept_share": 0.574,
+   "none_kept": 0
+  }
+ },
+ "lone_frames": {
+  "photos": 2210,
+  "rejected": 533,
+  "rate": 0.241
+ },
+ "rules": {
+  "burst_keep_first": {
+   "drops": 980,
+   "drops_agency_kept": 454,
+   "drops_agency_kept_share": 0.463,
+   "agency_rejects_caught": 526,
+   "agency_rejects_caught_share": 0.407
+  },
+  "burst_keep_half": {
+   "drops": 765,
+   "drops_agency_kept": 325,
+   "drops_agency_kept_share": 0.425,
+   "agency_rejects_caught": 440,
+   "agency_rejects_caught_share": 0.341
+  }
+ },
+ "couple_in_frame": {
+  "0": {
+   "photos": 1498,
+   "rejected": 305,
+   "rate": 0.204
+  },
+  "1": {
+   "photos": 1210,
+   "rejected": 442,
+   "rate": 0.365
+  },
+  "2": {
+   "photos": 1114,
+   "rejected": 544,
+   "rate": 0.488
+  }
+ },
+ "cross_camera": {
+  "second": {
+   "main_within_window": {
+    "photos": 477,
+    "rejected": 98,
+    "rate": 0.205
+   },
+   "no_main": {
+    "photos": 690,
+    "rejected": 174,
+    "rate": 0.252
+   }
+  },
+  "decor": {
+   "main_within_window": {
+    "photos": 130,
+    "rejected": 33,
+    "rate": 0.254
+   },
+   "no_main": {
+    "photos": 452,
+    "rejected": 94,
+    "rate": 0.208
+   }
+  },
+  "guests": {
+   "main_within_window": {
+    "photos": 20,
+    "rejected": 0,
+    "rate": 0.0
+   },
+   "no_main": {
+    "photos": 105,
+    "rejected": 8,
+    "rate": 0.076
+   }
+  }
+ },
+ "reasons": {
+  "reviewed": 1291,
+  "codebook": [
+   "2"
+  ],
+  "by_code": {
+   "SAME": 380,
+   "EXPR": 273,
+   "EYES": 143,
+   "COMP": 132,
+   "FACE": 95,
+   "MOMENT": 67,
+   "VERSION": 52,
+   "UNCLEAR": 44,
+   "NOCOUPLE": 43,
+   "EXPO": 27,
+   "DETAIL": 20,
+   "FOCUS": 9,
+   "CREW": 6
+  },
+  "by_code_role": {
+   "COMP": {
+    "second": 43,
+    "decor": 13,
+    "main": 76
+   },
+   "CREW": {
+    "main": 6
+   },
+   "DETAIL": {
+    "second": 4,
+    "decor": 8,
+    "guests": 2,
+    "main": 6
+   },
+   "EXPO": {
+    "second": 6,
+    "main": 21
+   },
+   "EXPR": {
+    "second": 67,
+    "decor": 31,
+    "main": 175
+   },
+   "EYES": {
+    "second": 33,
+    "decor": 4,
+    "main": 106
+   },
+   "FACE": {
+    "second": 26,
+    "decor": 17,
+    "main": 52
+   },
+   "FOCUS": {
+    "second": 3,
+    "decor": 2,
+    "main": 4
+   },
+   "MOMENT": {
+    "second": 15,
+    "decor": 6,
+    "main": 46
+   },
+   "NOCOUPLE": {
+    "second": 14,
+    "decor": 7,
+    "main": 22
+   },
+   "SAME": {
+    "second": 37,
+    "decor": 22,
+    "guests": 3,
+    "main": 318
+   },
+   "UNCLEAR": {
+    "second": 14,
+    "decor": 4,
+    "main": 26
+   },
+   "VERSION": {
+    "second": 10,
+    "decor": 13,
+    "guests": 3,
+    "main": 26
+   }
+  },
+  "loss": {
+   "no": 1105,
+   "maybe": 169,
+   "yes": 17
+  },
+  "conf": {
+   "medium": 782,
+   "high": 370,
+   "low": 139
+  },
+  "loss_yes": [
+   "DAVN1497.JPG",
+   "DAVN1560.JPG",
+   "DAVN1767.JPG",
+   "DAVN1945.JPG",
+   "JAS_4443.JPG",
+   "JAS_4637.JPG",
+   "JAS_4839.JPG",
+   "NIK_0597.JPG",
+   "NIK_0631.JPG",
+   "NIK_0633.JPG",
+   "NIK_0712.JPG",
+   "NIK_1297.JPG",
+   "NIK_1344.JPG",
+   "NIK_1609.JPG",
+   "NIK_1663.JPG",
+   "NIK_1707.JPG",
+   "NIK_1737.JPG"
+  ]
+ }
+}

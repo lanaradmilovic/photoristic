@@ -82,67 +82,67 @@ twin), so `DUP` is too high and the face codes too low. v1 `EXPR` also holds hid
 - **GLA-F01** The editor culls in Photo Mechanic 5 and marks rejects with colour class 1
   ("Winner") before moving them to `obrisano`.
   evidence: file · XMP `photomechanic:ColorClass="1"` in 949 of 962 rejects
-  bears on: Q16 · holds elsewhere: –
+  bears on: Q16 · holds elsewhere: FAE-F01 yes
 - **GLA-F02** Technical faults are almost absent among the rejects: the photographers removed
   them before the hand-over.
   evidence: judged · FOCUS + EXPO = 28 of 962 (3 %); measured · whole-image brightness and
   sharpness have the same distributions in kept and rejected (research)
-  bears on: B2, B3 · holds elsewhere: –
+  bears on: B2, B3 · holds elsewhere: FAE-F02 yes
 - **GLA-F03** The editor culls each camera alone; she does not choose the better of two
   photographers.
   evidence: measured · `cross_camera.second`: rejected 32.9 % when the main camera shot within
   3 s, 36.4 % when not
-  bears on: S5 · holds elsewhere: –
+  bears on: S5 · holds elsewhere: FAE-F03 yes
 - **GLA-F04** Main and second photographer lose about a third; decor and guest cameras little.
   The second photographer loses about half in the first dance and the cake.
   evidence: measured · `by_role`; `by_role_day_part` second: first_dance 54 %, cake 56 %,
   party 41 %; main: first_dance 22 %, cake 40 %
-  bears on: S3 · holds elsewhere: –
+  bears on: S3 · holds elsewhere: FAE-F04 no (main 45 %, second 23 %)
 - **GLA-F05** A reject is relative to a twin: the same frame without its twin would stay.
   evidence: judged · 737 of 962 rejects have a kept frame of similarity ≥ 0.8 in the same camera
   within 60 s (research); measured · no absolute measure separates kept from rejected
-  bears on: K2, B1, B4 · holds elsewhere: –
+  bears on: K2, B1, B4 · holds elsewhere: FAE-F05 yes
 - **GLA-F06** She often keeps both of two near-identical frames.
   evidence: measured · `near_identical_pairs.both_kept_share` 0.267
-  bears on: K2, W3, C2 · holds elsewhere: –
+  bears on: K2, W3, C2 · holds elsewhere: FAE-F06 weaker (0.18)
 - **GLA-F07** Every burst-thinning rule drops more frames she kept than frames she rejected.
   evidence: measured · `rules.burst_keep_first`: 254 of 498 drops she kept (51 %), catches 25 %
   of her rejects; "keep the sharpest face" is worse, 61 % (research)
-  bears on: K2, K7, C3 · holds elsewhere: –
+  bears on: K2, K7, C3 · holds elsewhere: FAE-F07 yes
 - **GLA-F08** Expression beats sharpness: where one frame of a burst was kept, the sharpest face
   is hers no more often than chance.
   evidence: measured · 122 of 260, chance 126 (research)
-  bears on: W2, B4 · holds elsewhere: –
+  bears on: W2, B4 · holds elsewhere: FAE no data
 - **GLA-F09** The couple's faces must be visible: a frame with a hidden or turned-away face of
   the bride or groom goes, even inside an important moment.
   evidence: judged · v1 `EXPR` notes ("face hidden", "backs"), strip notes of the first dance
   and the cake
-  bears on: K3, K4, B4 · holds elsewhere: –
+  bears on: K3, K4, B4 · holds elsewhere: FAE-F10 yes
 - **GLA-F10** A videographer, another photographer or their gear in the frame: always rejected.
   evidence: judged · 13 `CREW`, no kept counterexample seen by the reviewers
-  bears on: N1 · holds elsewhere: –
+  bears on: N1 · holds elsewhere: FAE-F11 no (kept frames with the video rig)
 - **GLA-F11** Something blocking at the edge (a guest's head, an arm, the priest's robe, a
   waiter) is a reason to reject when a cleaner twin exists. This is stricter than Peđa (N1:
   heads at the edge are retouched, not rejected).
   evidence: judged · 96 `COMP`; `KNEZ3929`/`3930` rejected for robe blur at the edge
-  bears on: N1, R6 · holds elsewhere: –
+  bears on: N1, R6 · holds elsewhere: FAE-F12 yes
 - **GLA-F12** Frames with the couple are rejected more often than frames without, because the
   couple is shot in bursts.
   evidence: measured · `couple_in_frame`: 38 % with both, 29 % with one, 21 % with neither
-  bears on: K4 · holds elsewhere: –
+  bears on: K4 · holds elsewhere: FAE-F13 yes
 - **GLA-F13** Of an in-camera crop and its wide frame, usually one stays, not both; same for
   colour and B/W, horizontal and vertical.
   evidence: judged · 29 `CROP`, strip notes of the reception line (LPZ)
-  bears on: K10, Q1 · holds elsewhere: –
+  bears on: K10, Q1 · holds elsewhere: FAE-F14 partly (one per framing)
 - **GLA-F14** Guests without the couple go easily in the ceremony and the party; at the
   arrival and the logo wall one frame per guest or pair stays.
   evidence: judged · 99 `NOCOUPLE`, 66 of them LPZ; measured · arrival rejects 12 %
-  bears on: K6, S2 · holds elsewhere: –
+  bears on: K6, S2 · holds elsewhere: FAE-F15 yes
 - **GLA-F15** No rule "always the first frame": in posed pairs the first and the second stay
   about equally often.
   evidence: measured · first frame is hers in 161 of 260 single-keep bursts (research);
   judged · reviewers disagreed between parts
-  bears on: W2 · holds elsewhere: –
+  bears on: W2 · holds elsewhere: FAE-F08 same share (63 %), read there as a default
 
 ## Losses
 

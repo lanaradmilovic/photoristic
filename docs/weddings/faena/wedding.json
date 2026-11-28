@@ -1,0 +1,36 @@
+{
+ "wedding": "faena",
+ "date": "2026-10-03",
+ "data": "<OneDrive>/Documents/Documents/photoristicxtajna/output/2026-11-27-faena",
+ "editor": "unknown (the agency's editor; Ksenija on Glamur)",
+ "program": "Photo Mechanic (XMP photomechanic:ColorClass)",
+ "before": "svadbe/2-faena/03.10. Faena/pre (3,822 JPG in card folders 01-26 and 'poslednja nikolina'; about 820 file numbers missing)",
+ "after": "svadbe/2-faena/03.10. Faena/posle/03.10. Faena (folders 1 = NIK_, 2 = DAVN, 3 = JAS_ and MIL_ kept; obrisano rejected; '00 Nove Montaze' left out)",
+ "reference_camera": "NIK_",
+ "cameras": [
+  {"prefix": "NIK_", "role": "main", "clock_offset_s": 0, "clock_checked": true, "note": "Nikon D850, medium JPG 4128x2752; bride's home, couple session, church, hall until the end"},
+  {"prefix": "DAVN", "role": "second", "clock_offset_s": -62, "clock_checked": true, "note": "Canon R6 II; groom's home, church, guests, party until 19:12; offset from 76 of 6,420 cross-camera pairs (sim >= 0.85) at -62 s, neighbours -60/-64"},
+  {"prefix": "JAS_", "role": "decor", "clock_offset_s": -112, "clock_checked": false, "note": "Nikon D750; guests outside the church, hall decor, table portraits, party; offset spread -106 to -118 s"},
+  {"prefix": "MIL_", "role": "guests", "clock_offset_s": 0, "clock_checked": false, "note": "Nikon D7500; guests at the hall entrance 15:22-16:46, no overlap with NIK_ to measure"}
+ ],
+ "couple_identities": ["B", "C"],
+ "couple_checked": true,
+ "couple_note": "B bride, C groom, by eye on faces_sheets (first 120 faces each; a few blurred faces of a screen or print in B's and C's first rows). A is a garbage identity of many guests (4,625 faces in 1,708 photos).",
+ "day_parts_source": "overview sheets of the day segments (posle-analiza/overview), 2026-11-27, corrected on 2026-11-28 from the reviewers' strip notes (formals and civil added); times on the NIK_ clock, approximate to a few minutes",
+ "day_parts": [
+  {"part": "couple", "start": "15:51", "end": "16:34", "cameras": ["NIK_"], "note": "venue stairs, lift, bar"},
+  {"part": "formals", "start": "11:06", "end": "11:45", "cameras": ["DAVN"], "note": "family groups at the groom's home, mixed with candids of the musicians arriving"},
+  {"part": "prep", "start": "00:00", "end": "13:50", "note": "groom's home (DAVN 10:04), bride's home (NIK 11:08), groom arrives at the bride's, music, flares, departure"},
+  {"part": "church", "start": "13:50", "end": "15:02", "note": "guests arriving outside the church (JAS, DAVN), ceremony, congratulations of the witnesses"},
+  {"part": "formals", "start": "15:02", "end": "15:09", "note": "family groups at the iconostasis; the last minute is the couple alone in the church"},
+  {"part": "church", "start": "15:09", "end": "15:12", "note": "exit with petals, group photo of all guests"},
+  {"part": "arrival", "start": "15:12", "end": "17:04", "note": "hall decor (JAS, DAVN, MIL), guests at the hall entrance (MIL), table portraits (JAS)"},
+  {"part": "civil", "start": "17:04", "end": "17:14", "note": "couple enters the hall, civil ceremony with the registrar, first kiss; DAVN and JAS shoot the guests' reactions"},
+  {"part": "reception_line", "start": "17:14", "end": "18:05", "note": "posed photos with guest groups at the flower wall"},
+  {"part": "first_dance", "start": "18:05", "end": "18:20", "note": "first dance with cold fire and smoke"},
+  {"part": "party", "start": "18:20", "end": "20:24"},
+  {"part": "cake", "start": "20:24", "end": "20:40"},
+  {"part": "party", "start": "20:40", "end": "24:00"}
+ ],
+ "note": "The civil ceremony is in the hall at 17:04 (seen by three reviewers on NIK_, DAVN and JAS_). The day starts at 10:04 on DAVN; NIK_ shoots to 21:45."
+}

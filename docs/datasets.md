@@ -45,3 +45,15 @@ measured once without tuning ([research](research/2026-11-26-glamur-grouping.md)
   in the fixed format: [weddings/glamur](weddings/glamur/analysis.md), rows in `analysis/photos.csv`.
 - Also in the output folder: `labelling/` (sheets, protocol, answers), `group_sheets/`, `clocks/`,
   `cross_camera/`, `scripts/`.
+
+## Faena
+
+Wedding of 2026-10-03, four cameras (NIK_ main, DAVN second, JAS_ decor, MIL_ guests), JPG only,
+given before and after the agency's cull. Not labelled, grouping not scored.
+
+- Source: `<OneDrive>/Documents/Documents/photoristicxtajna/svadbe/2-faena/03.10. Faena/pre` (3,822 JPG);
+  the agency's cull in `posle/03.10. Faena` (folders `1`, `2`, `3` kept, `obrisano` rejected).
+- Output: `<OneDrive>/Documents/Documents/photoristicxtajna/output/2026-11-27-faena/`; rows in
+  `analysis/photos.csv`, reasons in `analysis/reasons.jsonl`, reviewers' material and scripts in
+  `posle-analiza/`.
+- Analysis: [weddings/faena](weddings/faena/analysis.md).

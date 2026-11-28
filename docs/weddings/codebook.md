@@ -5,7 +5,7 @@ The reason codes reviewers give to every rejected photo of a wedding (`reasons.j
 editor's choice, never the editor's word. Change a code only by a new version: summaries of
 older weddings name the version they used.
 
-**Current version: 2.** Glamur was reviewed with version 1 (mapping at the end).
+**Current version: 2.** Glamur was reviewed with version 1 (mapping at the end), Faena with version 2.
 
 ## Rules for the reviewer
 
@@ -53,12 +53,17 @@ day) are coded by a second reviewer who does not see the first answer. The analy
 the agreement per code. A code with poor agreement gets a clearer definition and a new version,
 not a majority vote.
 
+Faena (v2, 129 rejects): same primary code in 60 %, kappa 0.52. `SAME` agrees (32 of 37); the
+face codes are confused with each other (`EXPR` 15 of 29, `EYES` 7 of 12, `FACE` 9 of 17) and
+`COMP` with `FACE` and `MOMENT` (3 of 9). Version 3 should say how to choose between `EYES` and
+`EXPR` (eyes down), between `FACE` and `COMP` (who is hidden), and between `EXPR` and `MOMENT`.
+
 ## Versions
 
 | Version | Change | Used by |
 |---|---|---|
 | 1 | first codes, from the Glamur brief (`posle-analiza/review/BRIEF.md`) | Glamur |
-| 2 | `DUP` → `SAME` with a stricter check; face hidden or turned away moved from `EXPR` to new `FACE`; `CROP` widened to `VERSION` (also B/W, orientation, wide/tight) | – |
+| 2 | `DUP` → `SAME` with a stricter check; face hidden or turned away moved from `EXPR` to new `FACE`; `CROP` widened to `VERSION` (also B/W, orientation, wide/tight) | Faena |
 
 Version 1 to 2: `CROP` → `VERSION`; `DUP` → `SAME`, `EYES`, `EXPR`, `FACE`, `COMP` or
 `VERSION` (not knowable without a second look); `EXPR` → `EXPR` or `FACE`; all other codes are

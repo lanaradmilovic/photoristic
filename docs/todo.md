@@ -71,10 +71,17 @@ write one line in [log.md](log.md). Items that need the user are marked **(user)
   suggestions against her decisions; questions for Ksenija are at the end of the report.
   The same in the fixed format for comparing weddings: [weddings/glamur](weddings/glamur/analysis.md)
   (15 claims, status draft until you check them).
+- **Faena before/after: read and check (user).** [weddings/faena](weddings/faena/analysis.md), 17
+  claims, status draft. First look at the four pairs where the editor kept the frame with closed
+  eyes (FAE-F09) and at the four losses that no kept frame covers; the 169 `maybe` losses are not
+  looked at. Seven questions for the agency are at the end. Comparison with Glamur:
+  [claims across weddings](weddings/README.md#claims-across-weddings).
+- **Reasons of the two weddings are not comparable by code.** Glamur has codebook 1, Faena 2.
+  Recode Glamur's `DUP` (475) with v2; write codebook v3 first, because two reviewers agreed on
+  only 60 % of Faena's codes ([codebook](weddings/codebook.md#agreement)).
 - **Next before/after wedding: use the fixed format ([weddings](weddings/README.md#adding-a-wedding)).**
-  Codebook version 2, a second reviewer on about 10 % of the rejects, then `cull.py analysis`
-  and `analysis.md`; then the first comparison fills "holds elsewhere" of the Glamur claims.
-  Glamur's `DUP` (475) could be recoded with v2 to make the two comparable on faces.
+  Tell reviewers to append results after every strip and to keep helper scripts in their own
+  scratch folder (on Faena a shared helper wrote one part's lines into another's file).
 - **Check the agent's labels of Glamur (user, 120 pairs).**
   `cull.py meeting --output "<OneDrive>\...\output\2026-11-26-glamur\review"`, then
   `cull.py meeting-score` on the same folder: its last block lists where your answer differs from

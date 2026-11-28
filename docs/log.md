@@ -218,3 +218,19 @@ link them here instead of copying.
   research of 2026-11-26. New: by part of the day, the second photographer loses 54 % in the
   first dance (main 22 %); keeping the first frame of a burst is less wrong (51 % of drops) than
   keeping the sharpest face (61 %).
+
+## 2026-11-28 — Faena: the second wedding before and after the agency's cull
+
+- Faena (2026-10-03, four cameras, 3,822 JPG): the editor rejected 1,291 (34 %). Eight agent
+  reviewers coded every reject with codebook 2, a blind second reviewer 129 of them: same code in
+  60 %, kappa 0.52 ([analysis](weddings/faena/analysis.md), 17 claims).
+- Holds on both weddings: rejects are relative to a kept twin (85 %; Glamur 77 %), each camera is
+  culled alone, burst thinning drops about as many of her keeps as of her rejects (46 %), lone
+  frames lose 24.1 % on both ([comparison](weddings/README.md#claims-across-weddings)).
+- Differs: the main photographer loses 45 % and the second 23 % (Glamur 31 % / 35 %); frames
+  with the videographer are sometimes kept; both of a near-identical pair stay less often (18 %).
+- New: in four posed pairs the editor kept the frame with closed eyes and rejected the clean
+  twin, so her cull is not a clean ground truth for "which frame of a pair" (FAE-F09).
+- The first run of the reviewers died on a usage limit with two of eight parts written; the
+  rerun wrote results after every strip. `wedding.json` got the civil ceremony (17:04) and two
+  formals blocks from the reviewers' strip notes.
